@@ -1,8 +1,7 @@
 -- =============================================
--- Anas Aatar Wale v3 - Database Schema (FIXED)
+-- Anas Aatar Wale v3 - Database Schema for Railway
+-- NOTE: Railway uses 'railway' as default database
 -- =============================================
-CREATE DATABASE IF NOT EXISTS anas_aatar_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-USE anas_aatar_db;
 
 CREATE TABLE IF NOT EXISTS categories (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -31,10 +30,8 @@ CREATE TABLE IF NOT EXISTS users (
     first_name VARCHAR(100) NOT NULL,
     last_name VARCHAR(100),
     email VARCHAR(150) UNIQUE NOT NULL,
-    -- FIX #5: password stored as SHA256 hex (64 chars) - NEVER plain text
     password VARCHAR(64) NOT NULL,
     phone VARCHAR(20),
-    -- FIX #8: address fields stored in users table
     address TEXT,
     city VARCHAR(100),
     state VARCHAR(100),
@@ -56,7 +53,6 @@ CREATE TABLE IF NOT EXISTS site_settings (
     hero_subtitle TEXT,
     hero_image VARCHAR(500) DEFAULT '',
     logo_image VARCHAR(500) DEFAULT '',
-    -- FIX #4 Admin: editable service badges
     fast_delivery_title VARCHAR(100) DEFAULT 'Fast Delivery',
     fast_delivery_text VARCHAR(200) DEFAULT '3-5 business days',
     secure_payment_title VARCHAR(100) DEFAULT 'Secure Payment',
@@ -99,7 +95,6 @@ CREATE TABLE IF NOT EXISTS wishlist (
     FOREIGN KEY (product_id) REFERENCES products(id)
 );
 
--- FIX #4 User: product reviews table
 CREATE TABLE IF NOT EXISTS product_reviews (
     id INT AUTO_INCREMENT PRIMARY KEY,
     product_id INT NOT NULL,
@@ -112,7 +107,6 @@ CREATE TABLE IF NOT EXISTS product_reviews (
     FOREIGN KEY (user_id) REFERENCES users(id)
 );
 
--- FIX #6 User: notifications table
 CREATE TABLE IF NOT EXISTS notifications (
     id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,
@@ -147,8 +141,6 @@ INSERT INTO site_settings (site_name,hero_title,hero_subtitle) VALUES
  'Discover Your <span>Signature</span> Fragrance',
  'Handcrafted attars and perfumes made with the finest natural ingredients. Experience the art of ancient perfumery blended with modern elegance.');
 
--- FIX #5 DB: passwords stored as SHA256 hex
--- admin password: admin123 | user password: user123
 INSERT INTO admins (username,password) VALUES ('admin', SHA2('admin123',256));
 INSERT INTO users (first_name,last_name,email,password,phone) VALUES
 ('Anas','Khan','anas@example.com', SHA2('user123',256), '+91 9876543210');
