@@ -89,3 +89,14 @@ The hash `e54fc6b51915e222ba6196747a19ebb8dfa651fd2b46a385a0ded647fbfefda0` is t
 This is **correct security** — never store plain text passwords.
 To log in, just type your normal password (`admin123`) and it gets hashed before comparing.
 # ANAS-AATER-WALE
+
+## Render deployment
+Render does not provide a local MySQL server at `localhost`, so set these environment variables on the web service:
+
+- `MYSQL_HOST`: your remote MySQL host
+- `MYSQL_PORT`: usually `3306`
+- `MYSQL_USER`: your MySQL username
+- `MYSQL_PASSWORD`: your MySQL password
+- `MYSQL_DB`: the database name, usually `anas_aatar_db`
+
+Use a remote MySQL provider or a managed database that Render can reach over the network.

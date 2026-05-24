@@ -9,10 +9,11 @@ app = Flask(__name__)
 app.secret_key = 'anas_aatar_wale_secret_2024'
 
 # ── MySQL ─────────────────────────────────────────────────
-app.config['MYSQL_HOST']     = 'localhost'
-app.config['MYSQL_USER']     = 'anas_user'
-app.config['MYSQL_PASSWORD'] = 'StrongPassw0rd!'
-app.config['MYSQL_DB']       = 'anas_aatar_db'
+app.config['MYSQL_HOST']     = os.environ.get('MYSQL_HOST', '127.0.0.1')
+app.config['MYSQL_USER']     = os.environ.get('MYSQL_USER', 'anas_user')
+app.config['MYSQL_PASSWORD'] = os.environ.get('MYSQL_PASSWORD', 'StrongPassw0rd!')
+app.config['MYSQL_DB']       = os.environ.get('MYSQL_DB', 'anas_aatar_db')
+app.config['MYSQL_PORT']     = int(os.environ.get('MYSQL_PORT', '3306'))
 
 # ── Razorpay ──────────────────────────────────────────────
 # 🔑 UPDATE THESE with your Razorpay live/test credentials
@@ -93,6 +94,7 @@ def get_site_settings():
 def get_db_connection():
     return pymysql.connect(
         host=app.config['MYSQL_HOST'],
+        port=app.config['MYSQL_PORT'],
         user=app.config['MYSQL_USER'],
         password=app.config['MYSQL_PASSWORD'],
         database=app.config['MYSQL_DB'],
