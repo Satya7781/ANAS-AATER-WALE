@@ -1,0 +1,345 @@
+{% extends "admin/base.html" %}
+{% block title %}Products - Admin{% endblock %}
+{% block page_title %}Products Management{% endblock %}
+
+{% block content %}
+<div class="card" style="margin-bottom:20px">
+  <div class="card-header">
+    <span class="card-title">🪷 All Products ({{ products|length }})</span>
+    <div style="display:flex;gap:10px">
+      <div class="admin-search">
+        <span>🔍</span>
+        <input type="text" id="productSearch" placeholder="Search products..." oninput="filterTable(this.value)">
+      </div>
+      <button class="btn-admin btn-admin-primary" onclick="openModal('addProductModal')">+ Add Product</button>
+    </div>
+  </div>
+  <div class="table-responsive">
+    <table class="table" id="productsTable">
+      <thead><tr>
+        <th>Product</th><th>Category</th><th>Price</th><th>Stock</th><th>Rating</th><th>Status</th><th>Actions</th>
+      </tr></thead>
+      <tbody>
+        {% for p in products %}
+        <tr id="row-{{ p.id }}">
+          <td>
+            <div style="display:flex;align-items:center;gap:10px">
+              <div class="product-thumb" style="width:40px;height:40px;border-radius:8px;overflow:hidden;background:var(--cream-dark);display:flex;align-items:center;justify-content:center">
+                {% if p.image %}
+                <img src="{{ p.image }}" style="width:100%;height:100%;object-fit:cover">
+                {% else %}
+                <span style="font-size:1.4rem">{% if 'oud' in p.name.lower() %}🪵{% elif 'rose' in p.name.lower() %}🌹{% elif 'musk' in p.name.lower() %}🌿{% else %}🪷{% endif %}</span>
+                {% endif %}
+              </div>
+              <div>
+                <div style="font-weight:600">{{ p.name }}</div>
+                <div style="font-size:0.78rem;color:#6B7280">{{ p.volume }}</div>
+              </div>
+            </div>
+          </td>
+          <td>{{ p.category_name }}</td>
+          <td><strong>₹{{ "%.0f"|format(p.price) }}</strong></td>
+          <td>
+            <span style="color:{% if p.stock > 10 %}#059669{% elif p.stock > 0 %}#D97706{% else %}#DC2626{% endif %};font-weight:600">
+              {{ p.stock }}
+            </span>
+          </td>
+          <td>⭐ {{ p.rating }}</td>
+          <td>
+            <span class="badge badge-{% if p.is_active %}active{% else %}inactive{% endif %}">
+              {% if p.is_active %}Active{% else %}Inactive{% endif %}
+            </span>
+          </td>
+          <td>
+            <div style="display:flex;gap:6px">
+              <!-- FIX #1 Admin: pass product as JSON to JS -->
+              <button class="btn-admin btn-admin-outline btn-icon-sm"
+                      onclick='editProduct({{ p|tojson|safe }})' title="Edit">✏️</button>
+              <button class="btn-admin btn-admin-danger btn-icon-sm"
+                      onclick="deleteProduct({{ p.id }}, '{{ p.name }}')" title="Delete">🗑️</button>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ADD PRODUCT MODAL -->
+<div class="admin-modal-overlay" id="addProductModal">
+  <div class="admin-modal">
+    <div class="admin-modal-header">
+      <h3 style="font-size:1rem;font-weight:600">+ Add New Product</h3>
+      <button class="modal-close" onclick="closeModal('addProductModal')">✕</button>
+    </div>
+    <div class="admin-modal-body">
+      <!-- FIX #3: Image upload with base64 in admin product modal -->
+      <div class="admin-form-group">
+        <label class="admin-form-label">Product Image</label>
+        <div style="border:2px dashed #E5E7EB;border-radius:12px;padding:16px;text-align:center;cursor:pointer;background:#FAFAFA"
+             onclick="triggerAddImgUpload()">
+          <img id="addImgPreview" style="display:none;width:120px;height:120px;object-fit:cover;border-radius:8px;margin:0 auto 8px">
+          <div id="addImgPlaceholder" style="color:#9CA3AF;font-size:0.9rem">📷 Click to upload product image</div>
+        </div>
+        <input type="file" id="addImgFile" accept="image/*" style="display:none" onchange="handleAddImgUpload(this)">
+        <input type="hidden" id="addImgData">
+      </div>
+      <div class="admin-form-row">
+        <div class="admin-form-group">
+          <label class="admin-form-label">Product Name *</label>
+          <input id="addName" type="text" class="admin-form-control" required placeholder="Oud Al Layl">
+        </div>
+        <div class="admin-form-group">
+          <label class="admin-form-label">Category *</label>
+          <select id="addCategory" class="admin-form-control" required>
+            {% for cat in categories %}
+            <option value="{{ cat.id }}">{{ cat.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+      <div class="admin-form-group">
+        <label class="admin-form-label">Description</label>
+        <textarea id="addDesc" class="admin-form-control" rows="3" placeholder="Product description..."></textarea>
+      </div>
+      <div class="admin-form-row">
+        <div class="admin-form-group">
+          <label class="admin-form-label">Price (₹) *</label>
+          <input id="addPrice" type="number" step="0.01" class="admin-form-control" required placeholder="999">
+        </div>
+        <div class="admin-form-group">
+          <label class="admin-form-label">Stock *</label>
+          <input id="addStock" type="number" class="admin-form-control" required placeholder="50">
+        </div>
+      </div>
+      <div class="admin-form-row">
+        <div class="admin-form-group">
+          <label class="admin-form-label">Volume</label>
+          <input id="addVolume" type="text" class="admin-form-control" placeholder="12ml">
+        </div>
+        <div class="admin-form-group">
+          <label class="admin-form-label">Rating</label>
+          <input id="addRating" type="number" step="0.1" min="1" max="5" class="admin-form-control" value="4.5">
+        </div>
+      </div>
+    </div>
+    <div class="admin-modal-footer">
+      <button class="btn-admin btn-admin-outline" onclick="closeModal('addProductModal')">Cancel</button>
+      <button class="btn-admin btn-admin-primary" onclick="submitAddProduct()">Add Product</button>
+    </div>
+  </div>
+</div>
+
+<!-- EDIT PRODUCT MODAL (FIX #1 + #3) -->
+<div class="admin-modal-overlay" id="editProductModal">
+  <div class="admin-modal">
+    <div class="admin-modal-header">
+      <h3 style="font-size:1rem;font-weight:600">✏️ Edit Product</h3>
+      <button class="modal-close" onclick="closeModal('editProductModal')">✕</button>
+    </div>
+    <div class="admin-modal-body">
+      <input type="hidden" id="editProductId">
+      <!-- FIX #3: Image upload in edit modal -->
+      <div class="admin-form-group">
+        <label class="admin-form-label">Product Image</label>
+        <div style="border:2px dashed #E5E7EB;border-radius:12px;padding:16px;text-align:center;cursor:pointer;background:#FAFAFA"
+             onclick="triggerEditImgUpload()">
+          <img id="editImgPreview" style="display:none;width:120px;height:120px;object-fit:cover;border-radius:8px;margin:0 auto 8px">
+          <div id="editImgPlaceholder" style="color:#9CA3AF;font-size:0.9rem">📷 Click to upload new image (optional)</div>
+        </div>
+        <input type="file" id="editImgFile" accept="image/*" style="display:none" onchange="handleEditImgUpload(this)">
+        <input type="hidden" id="editImgData">
+      </div>
+      <div class="admin-form-row">
+        <div class="admin-form-group">
+          <label class="admin-form-label">Product Name *</label>
+          <input id="editName" type="text" class="admin-form-control" required>
+        </div>
+        <div class="admin-form-group">
+          <label class="admin-form-label">Category *</label>
+          <select id="editCategory" class="admin-form-control" required>
+            {% for cat in categories %}
+            <option value="{{ cat.id }}">{{ cat.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+      <div class="admin-form-group">
+        <label class="admin-form-label">Description</label>
+        <textarea id="editDesc" class="admin-form-control" rows="3"></textarea>
+      </div>
+      <div class="admin-form-row">
+        <div class="admin-form-group">
+          <label class="admin-form-label">Price (₹)</label>
+          <input id="editPrice" type="number" step="0.01" class="admin-form-control" required>
+        </div>
+        <div class="admin-form-group">
+          <label class="admin-form-label">Stock</label>
+          <input id="editStock" type="number" class="admin-form-control" required>
+        </div>
+      </div>
+      <div class="admin-form-row">
+        <div class="admin-form-group">
+          <label class="admin-form-label">Volume</label>
+          <input id="editVolume" type="text" class="admin-form-control">
+        </div>
+        <div class="admin-form-group">
+          <label class="admin-form-label">Rating</label>
+          <input id="editRating" type="number" step="0.1" min="1" max="5" class="admin-form-control">
+        </div>
+      </div>
+      <div class="admin-form-group">
+        <label class="admin-form-label">Status</label>
+        <select id="editActive" class="admin-form-control">
+          <option value="1">Active</option>
+          <option value="0">Inactive</option>
+        </select>
+      </div>
+    </div>
+    <div class="admin-modal-footer">
+      <button class="btn-admin btn-admin-outline" onclick="closeModal('editProductModal')">Cancel</button>
+      <button class="btn-admin btn-admin-primary" id="editSaveBtn" onclick="submitEditProduct()">Save Changes</button>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function filterTable(q) {
+  document.querySelectorAll('#productsTable tbody tr').forEach(row => {
+    row.style.display = row.textContent.toLowerCase().includes(q.toLowerCase()) ? '' : 'none';
+  });
+}
+
+// ── Image helpers ──────────────────────────────
+function triggerAddImgUpload() { document.getElementById('addImgFile').click(); }
+function triggerEditImgUpload() { document.getElementById('editImgFile').click(); }
+
+function fileToBase64(file, previewId, placeholderId, dataId) {
+  const reader = new FileReader();
+  reader.onload = e => {
+    const img = document.getElementById(previewId);
+    img.src = e.target.result;
+    img.style.display = 'block';
+    document.getElementById(placeholderId).style.display = 'none';
+    document.getElementById(dataId).value = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+function handleAddImgUpload(input) {
+  if (input.files[0]) fileToBase64(input.files[0], 'addImgPreview', 'addImgPlaceholder', 'addImgData');
+}
+function handleEditImgUpload(input) {
+  if (input.files[0]) fileToBase64(input.files[0], 'editImgPreview', 'editImgPlaceholder', 'editImgData');
+}
+
+// ── Add Product ──────────────────────────────────
+function submitAddProduct() {
+  const name = document.getElementById('addName').value.trim();
+  const price = document.getElementById('addPrice').value;
+  if (!name || !price) { showAdminToast('Name and price are required!', 'error'); return; }
+
+  const data = {
+    name,
+    price,
+    description: document.getElementById('addDesc').value,
+    stock:       document.getElementById('addStock').value || 0,
+    volume:      document.getElementById('addVolume').value,
+    rating:      document.getElementById('addRating').value || 4.5,
+    category_id: document.getElementById('addCategory').value,
+    image_data:  document.getElementById('addImgData').value || null,
+  };
+
+  fetch('/admin/products/add', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify(data)
+  })
+  .then(r => r.json())
+  .then(d => {
+    if (d.success) { showAdminToast('✅ Product added!'); closeModal('addProductModal'); location.reload(); }
+    else showAdminToast('Error: ' + (d.error || 'Failed'), 'error');
+  });
+}
+
+// ── Edit Product (FIX #1 + #3) ───────────────────
+function editProduct(p) {
+  document.getElementById('editProductId').value = p.id;
+  document.getElementById('editName').value      = p.name || '';
+  document.getElementById('editDesc').value      = p.description || '';
+  document.getElementById('editPrice').value     = p.price || '';
+  document.getElementById('editStock').value     = p.stock || '';
+  document.getElementById('editVolume').value    = p.volume || '';
+  document.getElementById('editRating').value    = p.rating || 4.5;
+  document.getElementById('editCategory').value  = p.category_id || '';
+  document.getElementById('editActive').value    = p.is_active !== undefined ? p.is_active : 1;
+  document.getElementById('editImgData').value   = '';
+
+  // Show existing image
+  const prev = document.getElementById('editImgPreview');
+  const ph   = document.getElementById('editImgPlaceholder');
+  if (p.image) {
+    prev.src = p.image; prev.style.display = 'block';
+    ph.style.display = 'none';
+  } else {
+    prev.src = ''; prev.style.display = 'none';
+    ph.style.display = 'block';
+  }
+  openModal('editProductModal');
+}
+
+function submitEditProduct() {
+  const pid   = document.getElementById('editProductId').value;
+  const name  = document.getElementById('editName').value.trim();
+  const price = document.getElementById('editPrice').value;
+  if (!name || !price) { showAdminToast('Name and price are required!', 'error'); return; }
+
+  const btn = document.getElementById('editSaveBtn');
+  btn.disabled = true; btn.textContent = 'Saving...';
+
+  const data = {
+    name,
+    price,
+    description: document.getElementById('editDesc').value,
+    stock:       document.getElementById('editStock').value || 0,
+    volume:      document.getElementById('editVolume').value,
+    rating:      document.getElementById('editRating').value || 4.5,
+    category_id: document.getElementById('editCategory').value,
+    is_active:   document.getElementById('editActive').value,
+    image_data:  document.getElementById('editImgData').value || null,
+  };
+
+  fetch('/admin/products/edit/' + pid, {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify(data)
+  })
+  .then(r => r.json())
+  .then(d => {
+    btn.disabled = false; btn.textContent = 'Save Changes';
+    if (d.success) { showAdminToast('✅ Product updated!'); closeModal('editProductModal'); location.reload(); }
+    else showAdminToast('Error: ' + (d.error || 'Failed'), 'error');
+  })
+  .catch(() => { btn.disabled = false; btn.textContent = 'Save Changes'; showAdminToast('Network error!', 'error'); });
+}
+
+// ── Delete Product ────────────────────────────────
+function deleteProduct(pid, name) {
+  if (!confirm(`Delete "${name}"? This cannot be undone.`)) return;
+  fetch('/admin/products/delete/' + pid, {method: 'POST'})
+    .then(r => r.json())
+    .then(data => {
+      if (data.success) {
+        showAdminToast('🗑️ Product deleted!', 'error');
+        const row = document.getElementById('row-'+pid);
+        if (row) { row.style.opacity='0'; row.style.transform='translateX(-20px)'; row.style.transition='all 0.3s'; setTimeout(()=>row.remove(),300); }
+      } else {
+        showAdminToast(data.error || 'Delete failed!', 'error');
+      }
+    });
+}
+</script>
+{% endblock %}

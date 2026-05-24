@@ -1,0 +1,202 @@
+{% extends "user/base.html" %}
+{% block title %}Anas Aatar Wale - Premium Attar & Perfumes{% endblock %}
+{% block page_id %}index{% endblock %}
+{% block noPadTop %}0{% endblock %}
+
+{% block content %}
+<!-- ═══ HERO SECTION ═══ -->
+<section class="hero">
+  <div class="smoke-particle" style="left:15%;top:60%;animation-delay:0s"></div>
+  <div class="smoke-particle" style="left:25%;top:70%;animation-delay:1.5s"></div>
+
+  <div class="hero-content">
+    <div class="hero-tag">✨ Premium Attar Collection</div>
+    <h1 id="rtHeroTitle">{{ settings.hero_title|safe }}</h1>
+    <p id="rtHeroSubtitle">{{ settings.hero_subtitle }}</p>
+    <div class="hero-btns">
+      <a href="{{ url_for('products') }}" class="btn btn-primary">🛍️ Shop Now</a>
+      <a href="{{ url_for('products') }}?category=1" class="btn btn-outline">🪵 Explore Oud</a>
+    </div>
+  </div>
+
+  <!-- Hero Image -->
+  <div class="hero-image" id="rtHeroImageWrap" style="{{ '' if settings.hero_image else 'display:none' }}">
+    <img id="rtHeroImage" src="{{ settings.hero_image or '' }}" alt="Hero" style="width:100%;object-fit:contain">
+  </div>
+  {% if not settings.hero_image %}
+  <div class="hero-image" style="font-size:12rem;text-align:center;filter:drop-shadow(0 20px 40px rgba(0,0,0,0.3));animation:float 4s ease-in-out infinite">
+    🪷
+  </div>
+  {% endif %}
+</section>
+
+<!-- ═══ CATEGORIES ═══ -->
+<section class="section" style="padding-bottom:30px">
+  <div class="container">
+    <div class="section-header animate-fadeup">
+      <span class="section-tag">Browse By</span>
+      <h2 class="section-title">Our <span>Collections</span></h2>
+      <div class="divider"></div>
+    </div>
+    <div class="category-chips" id="rtCategoryChips">
+      <a href="{{ url_for('products') }}" class="chip animate-fadeup delay-1">🌟 All Attars</a>
+      {% for cat in categories %}
+      <a href="{{ url_for('products') }}?category={{ cat.id }}" class="chip animate-fadeup delay-{{ loop.index + 1 }}">
+        {{ cat.icon }} {{ cat.name }}
+      </a>
+      {% endfor %}
+      {% if is_admin %}
+      <button class="chip" onclick="adminEditCategories()" style="border-style:dashed;border-color:var(--gold);color:var(--gold)">✏️ Edit</button>
+      {% endif %}
+    </div>
+  </div>
+</section>
+
+<!-- ═══ FEATURED PRODUCTS ═══ -->
+<section class="section" style="padding-top:10px">
+  <div class="container">
+    <div class="section-header animate-on-scroll">
+      <span class="section-tag">Handpicked For You</span>
+      <h2 class="section-title">Featured <span>Attars</span></h2>
+      <p class="section-subtitle">Discover our most loved fragrances, crafted for the discerning soul</p>
+      <div class="divider"></div>
+    </div>
+
+    <!-- Real-time updatable grid -->
+    <div class="products-grid" id="rtFeaturedGrid">
+      {% for product in featured %}
+      <div class="product-card animate-on-scroll" style="animation-delay:{{ loop.index0 * 0.08 }}s"
+           onclick="window.location.href='{{ url_for('product_detail', product_id=product.id) }}'">
+        <div class="product-img">
+          {% if product.image %}
+          <img src="{{ product.image }}" alt="{{ product.name }}" style="width:100%;height:100%;object-fit:cover" data-rt-img="{{ product.id }}">
+          {% else %}
+          <div class="product-img-placeholder" style="font-size:4rem">
+            {% if 'oud' in product.name.lower() %}🪵{% elif 'rose' in product.name.lower() %}🌹{% elif 'musk' in product.name.lower() %}🌿{% elif 'jasmine' in product.name.lower() %}🌸{% elif 'amber' in product.name.lower() %}🌙{% elif 'citrus' in product.name.lower() %}🍋{% else %}🪷{% endif %}
+          </div>
+          {% endif %}
+          {% if loop.index <= 3 %}<span class="product-badge">⭐ Best Seller</span>{% endif %}
+          <button class="product-wishlist-btn" onclick="event.stopPropagation();toggleWishlist({{ product.id }},this)">🤍</button>
+          {% if is_admin %}
+          <div class="three-dots-menu" onclick="event.stopPropagation()">
+            <button class="three-dots-btn" onclick="toggleDotMenu(this)">⋮</button>
+            <div class="dot-menu-dropdown">
+              <button onclick="adminEditProduct({{ product.id }})">✏️ Edit Product</button>
+              <button onclick="adminEditProductImage({{ product.id }})">🖼️ Change Image</button>
+              <button onclick="adminDeleteProduct({{ product.id }},'{{ product.name }}')">🗑️ Delete</button>
+            </div>
+          </div>
+          {% endif %}
+        </div>
+        <div class="product-body">
+          <div class="product-category">{{ product.category_name }}</div>
+          <div class="product-name" data-rt-name="{{ product.id }}">{{ product.name }}</div>
+          <div class="product-rating"><span class="rating-stars">★★★★★</span><span>{{ product.rating }}</span><span>• {{ product.volume }}</span></div>
+          <div class="product-footer">
+            <div>
+              <div class="product-price" data-rt-price="{{ product.id }}">₹{{ "%.0f"|format(product.price) }}</div>
+              <div class="product-volume">{{ product.volume }} attar</div>
+            </div>
+            <button class="btn-add-cart" onclick="event.stopPropagation();addToCart({{ product.id }})">+</button>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+
+      <!-- Admin Add Product Card -->
+      {% if is_admin %}
+      <div class="product-card add-product-card" onclick="adminOpenAddProduct()">
+        <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;min-height:280px;gap:12px;color:var(--text-light)">
+          <div class="add-card-icon" style="width:60px;height:60px;border-radius:50%;border:2.5px dashed var(--border);display:flex;align-items:center;justify-content:center;font-size:1.8rem;transition:all .3s">+</div>
+          <span style="font-weight:600;font-size:0.9rem">Add New Product</span>
+        </div>
+      </div>
+      {% endif %}
+    </div>
+
+    <div style="text-align:center;margin-top:40px">
+      <a href="{{ url_for('products') }}" class="btn btn-dark">View All Products →</a>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ WHY US ═══ -->
+<section class="section" style="background:linear-gradient(135deg,var(--primary-dark),var(--primary));color:white">
+  <div class="container">
+    <div class="section-header animate-on-scroll">
+      <span class="section-tag" style="background:rgba(255,255,255,0.15);color:var(--gold-light)">Why Anas Aatar Wale</span>
+      <h2 class="section-title" style="color:white">Pure. <span>Natural.</span> Authentic.</h2>
+      <div class="divider"></div>
+    </div>
+    <div class="grid-3">
+      {% set why_items = [
+        ('🌿','100% Natural','Pure natural ingredients, no synthetic additives.'),
+        ('⏳','Long Lasting','Concentrated fragrances lasting 8-12 hours.'),
+        ('🚚', settings.fast_delivery_title or 'Fast Delivery', settings.fast_delivery_text or '3-5 business days'),
+        ('💎','Premium Quality','Sourced from finest suppliers worldwide.'),
+        ('🔒', settings.secure_payment_title or 'Secure Payment', settings.secure_payment_text or '100% safe checkout'),
+        ('🎁','Gift Packaging','Beautiful packaging for every occasion.')
+      ] %}
+      {% for f in why_items %}
+      <div style="text-align:center;padding:28px 20px;background:rgba(255,255,255,0.08);border-radius:16px;border:1px solid rgba(255,255,255,0.1);transition:all 0.3s"
+           onmouseover="this.style.background='rgba(255,255,255,0.15)';this.style.transform='translateY(-6px)'"
+           onmouseout="this.style.background='rgba(255,255,255,0.08)';this.style.transform='none'">
+        <div style="font-size:2.4rem;margin-bottom:12px">{{ f[0] }}</div>
+        <h4 style="color:var(--gold-light);margin-bottom:8px">{{ f[1] }}</h4>
+        <p style="opacity:0.75;font-size:0.88rem;line-height:1.6">{{ f[2] }}</p>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<!-- ═══ TOP RATED ═══ -->
+<section class="section">
+  <div class="container">
+    <div class="section-header animate-on-scroll">
+      <span class="section-tag">Highest Rated</span>
+      <h2 class="section-title">Top <span>Picks</span></h2>
+      <div class="divider"></div>
+    </div>
+    <div class="products-grid" id="rtTopRatedGrid">
+      {% for product in top_rated %}
+      <div class="product-card animate-on-scroll" onclick="window.location.href='{{ url_for('product_detail', product_id=product.id) }}'">
+        <div class="product-img">
+          {% if product.image %}
+          <img src="{{ product.image }}" data-rt-img="{{ product.id }}" style="width:100%;height:100%;object-fit:cover">
+          {% else %}
+          <div class="product-img-placeholder" style="font-size:4rem">
+            {% if 'oud' in product.name.lower() %}🪵{% elif 'rose' in product.name.lower() %}🌹{% else %}🪷{% endif %}
+          </div>
+          {% endif %}
+          <span class="product-badge" style="background:var(--primary)">🏆 Top Rated</span>
+          <button class="product-wishlist-btn" onclick="event.stopPropagation();toggleWishlist({{ product.id }},this)">🤍</button>
+          {% if is_admin %}
+          <div class="three-dots-menu" onclick="event.stopPropagation()">
+            <button class="three-dots-btn" onclick="toggleDotMenu(this)">⋮</button>
+            <div class="dot-menu-dropdown">
+              <button onclick="adminEditProduct({{ product.id }})">✏️ Edit</button>
+              <button onclick="adminEditProductImage({{ product.id }})">🖼️ Image</button>
+              <button onclick="adminDeleteProduct({{ product.id }},'{{ product.name }}')">🗑️ Delete</button>
+            </div>
+          </div>
+          {% endif %}
+        </div>
+        <div class="product-body">
+          <div class="product-category">{{ product.category_name }}</div>
+          <div class="product-name" data-rt-name="{{ product.id }}">{{ product.name }}</div>
+          <div class="product-rating"><span class="rating-stars">★★★★★</span><span>{{ product.rating }}</span></div>
+          <div class="product-footer">
+            <div>
+              <div class="product-price" data-rt-price="{{ product.id }}">₹{{ "%.0f"|format(product.price) }}</div>
+              <div class="product-volume">{{ product.volume }}</div>
+            </div>
+            <button class="btn-add-cart" onclick="event.stopPropagation();addToCart({{ product.id }})">+</button>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endblock %}

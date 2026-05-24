@@ -1,0 +1,40 @@
+{% extends "user/base.html" %}
+{% block title %}Wishlist - Anas Aatar Wale{% endblock %}
+
+{% block content %}
+<div class="section">
+  <div class="container">
+    <h1 style="font-family:'Playfair Display',serif;font-size:2rem;color:var(--primary-dark);margin-bottom:6px">❤️ My Wishlist</h1>
+    <p style="color:var(--text-light);margin-bottom:32px">{{ items|length }} item{% if items|length != 1 %}s{% endif %} saved</p>
+
+    {% if items %}
+    <div class="products-grid">
+      {% for item in items %}
+      <div class="product-card" onclick="window.location.href='{{ url_for('product_detail', product_id=item.id) }}'">
+        <div class="product-img">
+          <div class="product-img-placeholder">
+            {% if 'oud' in item.name.lower() %}🪵{% elif 'rose' in item.name.lower() %}🌹{% else %}🪷{% endif %}
+          </div>
+          <button class="product-wishlist-btn active" onclick="event.stopPropagation();toggleWishlist({{ item.id }},this);this.closest('.product-card').style.opacity='0';setTimeout(()=>this.closest('.product-card').remove(),300)">❤️</button>
+        </div>
+        <div class="product-body">
+          <div class="product-name">{{ item.name }}</div>
+          <div class="product-price" style="margin:8px 0">₹{{ "%.0f"|format(item.price) }}</div>
+          <button class="btn btn-dark btn-block btn-sm" onclick="event.stopPropagation();addToCart({{ item.id }})">
+            🛍️ Add to Cart
+          </button>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div style="text-align:center;padding:80px 20px">
+      <div style="font-size:6rem;margin-bottom:20px;display:inline-block">🤍</div>
+      <h3 style="color:var(--primary-dark);margin-bottom:10px">Your wishlist is empty</h3>
+      <p style="color:var(--text-light);margin-bottom:28px">Save items you love by clicking the ❤️ on products</p>
+      <a href="{{ url_for('products') }}" class="btn btn-dark">Explore Products</a>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

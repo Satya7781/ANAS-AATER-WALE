@@ -1,0 +1,149 @@
+{% extends "admin/base.html" %}
+{% block title %}Categories - Admin{% endblock %}
+{% block page_title %}Categories{% endblock %}
+
+{% block content %}
+<div class="card">
+  <div class="card-header">
+    <span class="card-title">🏷️ Categories ({{ categories|length }})</span>
+    <button class="btn-admin btn-admin-primary" onclick="openModal('addCatModal')">+ Add Category</button>
+  </div>
+  <div class="table-responsive">
+    <table class="table">
+      <thead><tr><th>Icon</th><th>Category Name</th><th>Products</th><th>Actions</th></tr></thead>
+      <tbody>
+        {% for cat in categories %}
+        <tr id="catRow{{ cat.id }}">
+          <td style="font-size:1.4rem">{{ cat.icon }}</td>
+          <td><strong>{{ cat.name }}</strong></td>
+          <td><span class="badge badge-active">{{ cat.product_count }} products</span></td>
+          <td>
+            <div style="display:flex;gap:6px">
+              <!-- FIX #2 Admin: Edit button -->
+              <button class="btn-admin btn-admin-outline btn-icon-sm"
+                      onclick="openEditCat({{ cat.id }}, '{{ cat.name }}', '{{ cat.icon }}')" title="Edit">✏️</button>
+              <!-- FIX #2 Admin: Delete button -->
+              <button class="btn-admin btn-admin-danger btn-icon-sm"
+                      onclick="deleteCat({{ cat.id }}, '{{ cat.name }}', {{ cat.product_count }})" title="Delete">🗑️</button>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ADD CATEGORY MODAL -->
+<div class="admin-modal-overlay" id="addCatModal">
+  <div class="admin-modal" style="max-width:400px">
+    <div class="admin-modal-header">
+      <h3 style="font-size:1rem;font-weight:600">+ Add Category</h3>
+      <button class="modal-close" onclick="closeModal('addCatModal')">✕</button>
+    </div>
+    <div class="admin-modal-body">
+      <div class="admin-form-group">
+        <label class="admin-form-label">Category Name *</label>
+        <input id="catName" type="text" class="admin-form-control" required placeholder="e.g. Woody">
+      </div>
+      <div class="admin-form-group">
+        <label class="admin-form-label">Icon (Emoji)</label>
+        <input id="catIcon" type="text" class="admin-form-control" placeholder="🌿" maxlength="2">
+      </div>
+    </div>
+    <div class="admin-modal-footer">
+      <button class="btn-admin btn-admin-outline" onclick="closeModal('addCatModal')">Cancel</button>
+      <button class="btn-admin btn-admin-primary" onclick="submitCategory()">Add</button>
+    </div>
+  </div>
+</div>
+
+<!-- EDIT CATEGORY MODAL (FIX #2) -->
+<div class="admin-modal-overlay" id="editCatModal">
+  <div class="admin-modal" style="max-width:400px">
+    <div class="admin-modal-header">
+      <h3 style="font-size:1rem;font-weight:600">✏️ Edit Category</h3>
+      <button class="modal-close" onclick="closeModal('editCatModal')">✕</button>
+    </div>
+    <div class="admin-modal-body">
+      <input type="hidden" id="editCatId">
+      <div class="admin-form-group">
+        <label class="admin-form-label">Category Name *</label>
+        <input id="editCatName" type="text" class="admin-form-control" required>
+      </div>
+      <div class="admin-form-group">
+        <label class="admin-form-label">Icon (Emoji)</label>
+        <input id="editCatIcon" type="text" class="admin-form-control" maxlength="2">
+      </div>
+    </div>
+    <div class="admin-modal-footer">
+      <button class="btn-admin btn-admin-outline" onclick="closeModal('editCatModal')">Cancel</button>
+      <button class="btn-admin btn-admin-primary" onclick="submitEditCategory()">Save Changes</button>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function submitCategory() {
+  const name = document.getElementById('catName').value.trim();
+  if (!name) { showAdminToast('Name required!', 'error'); return; }
+  fetch('/admin/categories/save', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({name, icon: document.getElementById('catIcon').value || '🏷️'})
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (data.success) { showAdminToast('✅ Category added!'); closeModal('addCatModal'); location.reload(); }
+    else showAdminToast(data.error || 'Error!', 'error');
+  });
+}
+
+// FIX #2: Edit category
+function openEditCat(id, name, icon) {
+  document.getElementById('editCatId').value = id;
+  document.getElementById('editCatName').value = name;
+  document.getElementById('editCatIcon').value = icon;
+  openModal('editCatModal');
+}
+
+function submitEditCategory() {
+  const id   = document.getElementById('editCatId').value;
+  const name = document.getElementById('editCatName').value.trim();
+  const icon = document.getElementById('editCatIcon').value || '🏷️';
+  if (!name) { showAdminToast('Name required!', 'error'); return; }
+  fetch('/admin/categories/save', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({id: parseInt(id), name, icon})
+  })
+  .then(r => r.json())
+  .then(d => {
+    if (d.success) { showAdminToast('✅ Category updated!'); closeModal('editCatModal'); location.reload(); }
+    else showAdminToast(d.error || 'Error!', 'error');
+  });
+}
+
+// FIX #2: Delete category
+function deleteCat(id, name, productCount) {
+  if (productCount > 0) {
+    alert(`Cannot delete "${name}" — it has ${productCount} products. Reassign them first.`);
+    return;
+  }
+  if (!confirm(`Delete category "${name}"? This cannot be undone.`)) return;
+  fetch(`/admin/categories/delete/${id}`, {method:'POST'})
+    .then(r => r.json())
+    .then(d => {
+      if (d.success) {
+        showAdminToast('🗑️ Category deleted!', 'error');
+        const row = document.getElementById('catRow'+id);
+        if (row) { row.style.opacity='0'; row.style.transform='translateX(-20px)'; row.style.transition='all 0.3s'; setTimeout(()=>row.remove(),300); }
+      } else {
+        showAdminToast(d.error || 'Cannot delete!', 'error');
+      }
+    });
+}
+</script>
+{% endblock %}

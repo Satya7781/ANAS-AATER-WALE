@@ -1,0 +1,5 @@
+.venv/
+__pycache__/
+*.pyc
+anas_aatar_db.sqlite3
+/tmp/

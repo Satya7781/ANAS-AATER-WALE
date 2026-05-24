@@ -1,0 +1,276 @@
+{% extends "user/base.html" %}
+{% block title %}{{ product.name }} - Anas Aatar Wale{% endblock %}
+{% block page_id %}product_detail{% endblock %}
+
+{% block content %}
+<div class="section">
+  <div class="container">
+    <a href="{{ url_for('products') }}" class="btn btn-outline"
+       style="border-color:var(--border);color:var(--text-mid);margin-bottom:24px;display:inline-flex">
+      ← Back to Products
+    </a>
+
+    <div class="grid-2" style="align-items:start;gap:40px">
+      <!-- Product Image -->
+      <div class="animate-fadeup">
+        <div class="product-detail-img" style="height:420px;border-radius:20px;overflow:hidden;background:var(--cream-dark);display:flex;align-items:center;justify-content:center">
+          {% if product.image %}
+          <img src="{{ product.image }}" alt="{{ product.name }}" style="width:100%;height:100%;object-fit:cover">
+          {% else %}
+          <div style="font-size:10rem;animation:float 3s ease-in-out infinite">
+            {% if 'oud' in product.name.lower() %}🪵
+            {% elif 'rose' in product.name.lower() %}🌹
+            {% elif 'musk' in product.name.lower() %}🌿
+            {% elif 'jasmine' in product.name.lower() %}🌸
+            {% elif 'amber' in product.name.lower() %}🌙
+            {% elif 'citrus' in product.name.lower() %}🍋
+            {% else %}🪷{% endif %}
+          </div>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Product Info -->
+      <div class="animate-fadeup delay-2">
+        <div class="product-category" style="font-size:0.85rem;margin-bottom:8px">{{ product.category_name }}</div>
+
+        <div style="display:flex;align-items:start;justify-content:space-between;gap:12px;margin-bottom:12px">
+          <h1 style="font-family:'Playfair Display',serif;font-size:2rem;color:var(--primary-dark);line-height:1.2">
+            {{ product.name }}
+          </h1>
+          {% if session.user_id %}
+          <button onclick="toggleWishlist({{ product.id }}, this)"
+                  class="btn-icon" style="width:44px;height:44px;flex-shrink:0;font-size:1.3rem">🤍</button>
+          {% endif %}
+        </div>
+
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px">
+          <div style="background:var(--gold);color:white;padding:5px 14px;border-radius:50px;font-weight:700;display:inline-flex;align-items:center;gap:5px">
+            ★ {{ product.rating }}
+          </div>
+          <span style="color:var(--text-light);font-size:0.9rem">{{ reviews|length }} review{{ 's' if reviews|length != 1 else '' }}</span>
+        </div>
+
+        <div style="font-size:2rem;font-weight:700;color:var(--primary);margin-bottom:20px">
+          ₹{{ "%.0f"|format(product.price) }}
+          <span style="font-size:1rem;color:var(--text-light);font-weight:400">/ {{ product.volume }}</span>
+        </div>
+
+        {% if product.description %}
+        <div style="margin-bottom:22px">
+          <div style="font-weight:600;color:var(--text-mid);margin-bottom:8px">About</div>
+          <p style="color:var(--text-light);line-height:1.8;font-size:0.95rem">{{ product.description }}</p>
+        </div>
+        {% endif %}
+
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;padding:14px 18px;background:var(--cream-dark);border-radius:12px">
+          <span style="color:var(--text-mid);font-weight:500">Volume: <strong>{{ product.volume }}</strong></span>
+          <span style="color:{% if product.stock > 10 %}var(--success){% elif product.stock > 0 %}var(--gold){% else %}var(--error){% endif %};font-weight:600">
+            {% if product.stock > 10 %}✅ In Stock
+            {% elif product.stock > 0 %}⚡ Only {{ product.stock }} left
+            {% else %}❌ Out of Stock{% endif %}
+          </span>
+        </div>
+
+        <div style="margin-bottom:24px">
+          <div style="font-weight:600;color:var(--text-mid);margin-bottom:12px">Quantity</div>
+          <div class="qty-control">
+            <button class="qty-btn qty-minus">−</button>
+            <span class="qty-value">1</span>
+            <button class="qty-btn qty-plus">+</button>
+          </div>
+        </div>
+
+        <div style="display:flex;gap:14px">
+          <button class="btn-icon" style="width:52px;height:52px;font-size:1.3rem;border-radius:14px"
+                  onclick="addToCart({{ product.id }}, parseInt(document.querySelector('.qty-value').textContent))">
+            🛍️
+          </button>
+          <button class="btn btn-primary" style="flex:1;border-radius:14px;justify-content:center"
+                  onclick="addToCart({{ product.id }}, parseInt(document.querySelector('.qty-value').textContent)).then(()=>window.location.href='/cart')">
+            Buy Now 🌟
+          </button>
+        </div>
+
+        <!-- Delivery Info (FIX: uses settings from DB) -->
+        <div style="margin-top:24px;display:grid;grid-template-columns:1fr 1fr;gap:12px">
+          <div style="display:flex;align-items:center;gap:8px;padding:10px;background:var(--cream-dark);border-radius:10px">
+            <span style="font-size:1.2rem">🚚</span>
+            <div>
+              <div style="font-size:0.8rem;font-weight:600;color:var(--primary-dark)">{{ settings.fast_delivery_title or 'Fast Delivery' }}</div>
+              <div style="font-size:0.72rem;color:var(--text-light)">{{ settings.fast_delivery_text or '3-5 business days' }}</div>
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;padding:10px;background:var(--cream-dark);border-radius:10px">
+            <span style="font-size:1.2rem">🔒</span>
+            <div>
+              <div style="font-size:0.8rem;font-weight:600;color:var(--primary-dark)">{{ settings.secure_payment_title or 'Secure Payment' }}</div>
+              <div style="font-size:0.72rem;color:var(--text-light)">{{ settings.secure_payment_text or '100% safe checkout' }}</div>
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;padding:10px;background:var(--cream-dark);border-radius:10px">
+            <span style="font-size:1.2rem">↩️</span>
+            <div>
+              <div style="font-size:0.8rem;font-weight:600;color:var(--primary-dark)">{{ settings.easy_returns_title or 'Easy Returns' }}</div>
+              <div style="font-size:0.72rem;color:var(--text-light)">{{ settings.easy_returns_text or '7 day return policy' }}</div>
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;padding:10px;background:var(--cream-dark);border-radius:10px">
+            <span style="font-size:1.2rem">💯</span>
+            <div>
+              <div style="font-size:0.8rem;font-weight:600;color:var(--primary-dark)">{{ settings.authentic_title or 'Authentic' }}</div>
+              <div style="font-size:0.72rem;color:var(--text-light)">{{ settings.authentic_text or '100% genuine product' }}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ REVIEWS SECTION (FIX #4) ═══ -->
+    <div style="margin-top:60px">
+      <div class="section-header" style="text-align:left;margin-bottom:28px">
+        <h2 class="section-title">Customer <span>Reviews</span></h2>
+        <div class="divider" style="margin-left:0"></div>
+      </div>
+
+      <!-- Write review -->
+      {% if session.user_id and not user_reviewed %}
+      <div class="card" style="margin-bottom:28px;padding:24px;border-radius:16px">
+        <h4 style="margin-bottom:16px;color:var(--primary-dark)">✍️ Write a Review</h4>
+        <div style="margin-bottom:14px">
+          <div style="font-size:0.85rem;font-weight:600;color:var(--text-mid);margin-bottom:8px">Your Rating</div>
+          <div id="starPicker" style="display:flex;gap:6px;font-size:1.8rem;cursor:pointer">
+            {% for i in range(1,6) %}
+            <span data-star="{{ i }}" onclick="selectStar({{ i }})" style="color:#D1D5DB;transition:color 0.2s">★</span>
+            {% endfor %}
+          </div>
+          <input type="hidden" id="reviewRating" value="5">
+        </div>
+        <div style="margin-bottom:14px">
+          <textarea id="reviewComment" rows="3" placeholder="Share your experience with this attar..."
+            style="width:100%;border:1.5px solid var(--border);border-radius:12px;padding:12px 16px;font-family:inherit;font-size:0.9rem;resize:vertical;outline:none"></textarea>
+        </div>
+        <button onclick="submitReview({{ product.id }})" class="btn btn-dark" style="border-radius:12px">
+          Submit Review 🌟
+        </button>
+      </div>
+      {% elif session.user_id and user_reviewed %}
+      <div style="background:var(--cream-dark);border-radius:12px;padding:16px;margin-bottom:24px;color:var(--text-mid);font-size:0.9rem">
+        ✅ You have already reviewed this product.
+      </div>
+      {% else %}
+      <div style="background:var(--cream-dark);border-radius:12px;padding:16px;margin-bottom:24px">
+        <a href="{{ url_for('login') }}?next={{ request.path }}" style="color:var(--primary);font-weight:600">Login</a>
+        <span style="color:var(--text-mid);font-size:0.9rem"> to write a review</span>
+      </div>
+      {% endif %}
+
+      <!-- Review list -->
+      {% if reviews %}
+      <div style="display:flex;flex-direction:column;gap:16px" id="reviewsList">
+        {% for review in reviews %}
+        <div class="card" style="padding:20px;border-radius:14px;border:1.5px solid var(--border)">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+            <div style="display:flex;align-items:center;gap:10px">
+              <div style="width:36px;height:36px;border-radius:50%;background:var(--primary);color:white;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.9rem">
+                {{ review.first_name[0] }}
+              </div>
+              <div>
+                <div style="font-weight:600;color:var(--primary-dark);font-size:0.9rem">{{ review.first_name }} {{ review.last_name or '' }}</div>
+                <div style="font-size:0.75rem;color:var(--text-light)">{{ review.created_at }}</div>
+              </div>
+            </div>
+            <div style="background:var(--gold);color:white;padding:3px 10px;border-radius:50px;font-size:0.82rem;font-weight:700">
+              ★ {{ review.rating }}
+            </div>
+          </div>
+          <p style="color:var(--text-mid);font-size:0.9rem;line-height:1.7">{{ review.comment }}</p>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <div style="text-align:center;padding:40px;color:var(--text-light)">
+        <div style="font-size:3rem;margin-bottom:12px">💬</div>
+        <p>No reviews yet. Be the first to review!</p>
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- Related Products -->
+    {% if related %}
+    <div style="margin-top:60px">
+      <div class="section-header" style="text-align:left;margin-bottom:28px">
+        <h2 class="section-title">You May Also <span>Like</span></h2>
+      </div>
+      <div class="products-grid" style="grid-template-columns:repeat(auto-fill,minmax(220px,1fr))">
+        {% for rp in related %}
+        <div class="product-card" onclick="window.location.href='{{ url_for('product_detail', product_id=rp.id) }}'">
+          <div class="product-img" style="height:160px">
+            {% if rp.image %}
+            <img src="{{ rp.image }}" alt="{{ rp.name }}" style="width:100%;height:100%;object-fit:cover">
+            {% else %}
+            <div class="product-img-placeholder" style="font-size:3.5rem">
+              {% if 'oud' in rp.name.lower() %}🪵{% elif 'rose' in rp.name.lower() %}🌹{% else %}🪷{% endif %}
+            </div>
+            {% endif %}
+          </div>
+          <div class="product-body" style="padding:14px">
+            <div class="product-name" style="font-size:0.9rem">{{ rp.name }}</div>
+            <div class="product-footer" style="margin-top:10px">
+              <div class="product-price" style="font-size:1rem">₹{{ "%.0f"|format(rp.price) }}</div>
+              <button class="btn-add-cart" onclick="event.stopPropagation();addToCart({{ rp.id }})">+</button>
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Star picker
+function selectStar(n) {
+  document.getElementById('reviewRating').value = n;
+  document.querySelectorAll('#starPicker span').forEach((s,i) => {
+    s.style.color = i < n ? '#C4962A' : '#D1D5DB';
+  });
+}
+// Default 5 stars selected
+selectStar(5);
+
+// Qty controls
+document.querySelector('.qty-minus')?.addEventListener('click', () => {
+  const v = document.querySelector('.qty-value');
+  if (parseInt(v.textContent) > 1) v.textContent = parseInt(v.textContent) - 1;
+});
+document.querySelector('.qty-plus')?.addEventListener('click', () => {
+  const v = document.querySelector('.qty-value');
+  v.textContent = parseInt(v.textContent) + 1;
+});
+
+function submitReview(pid) {
+  const rating = document.getElementById('reviewRating').value;
+  const comment = document.getElementById('reviewComment').value.trim();
+  if (!comment) { showToast('Please write a comment!', 'error'); return; }
+  fetch(`/api/product/${pid}/review`, {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({rating: parseInt(rating), comment})
+  })
+  .then(r => r.json())
+  .then(d => {
+    if (d.success) {
+      showToast('✅ Review submitted! Thank you.', 'success');
+      setTimeout(() => location.reload(), 1500);
+    } else {
+      showToast(d.error || 'Failed to submit', 'error');
+    }
+  })
+  .catch(() => showToast('Network error', 'error'));
+}
+</script>
+{% endblock %}

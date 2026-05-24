@@ -1,0 +1,40 @@
+{% extends "admin/base.html" %}
+{% block title %}Customers - Admin{% endblock %}
+{% block page_title %}Customer Management{% endblock %}
+
+{% block content %}
+<div class="card">
+  <div class="card-header">
+    <span class="card-title">👥 All Customers ({{ users|length }})</span>
+    <div class="admin-search">
+      <span>🔍</span>
+      <input type="text" placeholder="Search customers..." oninput="document.querySelectorAll('#usersTable tbody tr').forEach(r=>r.style.display=r.textContent.toLowerCase().includes(this.value.toLowerCase())?'':'none')">
+    </div>
+  </div>
+  <div class="table-responsive">
+    <table class="table" id="usersTable">
+      <thead><tr>
+        <th>Customer</th><th>Email</th><th>Phone</th><th>Orders</th><th>Joined</th>
+      </tr></thead>
+      <tbody>
+        {% for user in users %}
+        <tr>
+          <td>
+            <div style="display:flex;align-items:center;gap:10px">
+              <div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#5C3317,#C4962A);display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:0.85rem">
+                {{ user.first_name[0] }}
+              </div>
+              <strong>{{ user.first_name }} {{ user.last_name or '' }}</strong>
+            </div>
+          </td>
+          <td>{{ user.email }}</td>
+          <td>{{ user.phone or '—' }}</td>
+          <td><span class="badge badge-active">{{ user.order_count }} orders</span></td>
+          <td style="font-size:0.85rem">{{ user.created_at.strftime('%d %b %Y') }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

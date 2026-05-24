@@ -1,0 +1,96 @@
+{% extends "user/base.html" %}
+{% block title %}Products - Anas Aatar Wale{% endblock %}
+{% block page_id %}products{% endblock %}
+
+{% block content %}
+<div style="background:linear-gradient(135deg,var(--primary-dark),var(--primary));padding:50px 5% 40px;color:white">
+  <div class="container animate-fadeup">
+    <h1 style="font-family:'Playfair Display',serif;font-size:2.2rem;margin-bottom:8px">
+      {% if search %}Results for "{{ search }}"{% else %}Our Attar Collection{% endif %}
+    </h1>
+    <p style="opacity:0.75;font-size:0.95rem">{{ products|length }} premium fragrances</p>
+    <div class="search-bar" style="max-width:500px;margin-top:20px">
+      <input type="text" id="searchInput" placeholder="Search attars..." value="{{ search }}">
+      <button class="search-btn">🔍</button>
+    </div>
+  </div>
+</div>
+
+<section class="section" style="padding-top:28px">
+  <div class="container">
+    <div class="category-chips animate-fadedown" id="rtCategoryChips">
+      <a href="{{ url_for('products') }}" class="chip {% if not selected_category %}active{% endif %}">🌟 All</a>
+      {% for cat in categories %}
+      <a href="{{ url_for('products') }}?category={{ cat.id }}" class="chip {% if selected_category == cat.id|string %}active{% endif %}">
+        {{ cat.icon }} {{ cat.name }}
+      </a>
+      {% endfor %}
+      {% if is_admin %}
+      <button class="chip" onclick="adminEditCategories()" style="border-style:dashed;border-color:var(--gold);color:var(--gold)">✏️ Edit</button>
+      {% endif %}
+    </div>
+
+    <!-- Real-time products grid -->
+    <div class="products-grid" id="rtProductsGrid">
+      {% for product in products %}
+      <div class="product-card" style="animation-delay:{{ loop.index0 * 0.07 }}s"
+           onclick="window.location.href='{{ url_for('product_detail', product_id=product.id) }}'">
+        <div class="product-img">
+          {% if product.image %}
+          <img src="{{ product.image }}" data-rt-img="{{ product.id }}" style="width:100%;height:100%;object-fit:cover;transition:transform .5s">
+          {% else %}
+          <div class="product-img-placeholder" style="font-size:4rem">
+            {% if 'oud' in product.name.lower() %}🪵{% elif 'rose' in product.name.lower() %}🌹{% elif 'musk' in product.name.lower() %}🌿{% elif 'jasmine' in product.name.lower() %}🌸{% elif 'amber' in product.name.lower() %}🌙{% elif 'citrus' in product.name.lower() %}🍋{% else %}🪷{% endif %}
+          </div>
+          {% endif %}
+          {% if product.stock < 10 %}<span class="product-badge" style="background:var(--error)">⚡ Low Stock</span>{% endif %}
+          <button class="product-wishlist-btn" onclick="event.stopPropagation();toggleWishlist({{ product.id }},this)">🤍</button>
+          {% if is_admin %}
+          <div class="three-dots-menu" onclick="event.stopPropagation()">
+            <button class="three-dots-btn" onclick="toggleDotMenu(this)">⋮</button>
+            <div class="dot-menu-dropdown">
+              <button onclick="adminEditProduct({{ product.id }})">✏️ Edit Product</button>
+              <button onclick="adminEditProductImage({{ product.id }})">🖼️ Change Image</button>
+              <button onclick="adminDeleteProduct({{ product.id }},'{{ product.name }}')">🗑️ Delete</button>
+            </div>
+          </div>
+          {% endif %}
+        </div>
+        <div class="product-body">
+          <div class="product-category">{{ product.category_name }}</div>
+          <div class="product-name" data-rt-name="{{ product.id }}">{{ product.name }}</div>
+          <div class="product-rating">
+            <span class="rating-stars">{% for i in range(5) %}{% if i < product.rating|int %}★{% else %}☆{% endif %}{% endfor %}</span>
+            <span>{{ product.rating }}</span> <span>• {{ product.volume }}</span>
+          </div>
+          <div class="product-footer">
+            <div>
+              <div class="product-price" data-rt-price="{{ product.id }}">₹{{ "%.0f"|format(product.price) }}</div>
+              <div class="product-volume">{{ product.volume }} attar</div>
+            </div>
+            <button class="btn-add-cart" onclick="event.stopPropagation();addToCart({{ product.id }})">+</button>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+
+      {% if is_admin %}
+      <div class="product-card add-product-card" onclick="adminOpenAddProduct()">
+        <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;min-height:280px;gap:12px;color:var(--text-light)">
+          <div class="add-card-icon" style="width:60px;height:60px;border-radius:50%;border:2.5px dashed var(--border);display:flex;align-items:center;justify-content:center;font-size:1.8rem;transition:all .3s">+</div>
+          <span style="font-weight:600;font-size:0.9rem">Add New Product</span>
+        </div>
+      </div>
+      {% endif %}
+
+      {% if not products and not is_admin %}
+      <div style="grid-column:1/-1;text-align:center;padding:80px 20px">
+        <div style="font-size:5rem;margin-bottom:20px">🔍</div>
+        <h3 style="color:var(--text-mid)">No products found</h3>
+        <a href="{{ url_for('products') }}" class="btn btn-dark" style="margin-top:20px">View All Products</a>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</section>
+{% endblock %}

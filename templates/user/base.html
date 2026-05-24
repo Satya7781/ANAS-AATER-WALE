@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Anas Aatar Wale - Premium Attar & Perfumes{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🪷</text></svg>">
+</head>
+<body data-page="{% block page_id %}index{% endblock %}" data-admin="{{ '1' if session.admin_id else '0' }}">
+
+<!-- Page Loader -->
+<div id="pageLoader" class="page-loader">
+  <div class="loader-logo">🪷</div>
+  <div class="loader"></div>
+</div>
+
+<!-- Real-Time Indicator -->
+<div class="rt-indicator" id="rtIndicator">
+  <div class="rt-dot"></div> Live
+</div>
+
+<!-- ─── NAVBAR ─── -->
+<nav class="navbar">
+  <a href="{{ url_for('index') }}" class="navbar-brand">
+    <div class="navbar-logo" id="logoWrap">
+      {% if settings.logo_image %}
+        <img src="{{ settings.logo_image }}" class="rt-logo-img" style="width:42px;height:42px;border-radius:50%;object-fit:cover">
+      {% else %}
+        <!-- <span class="rt-logo-emoji">🪷</span> -->
+        <img class="rt-logo-img" src="{{ url_for('static', filename='img/01.png') }}" style="width:42px;height:42px;border-radius:50%;object-fit:cover">
+      {% endif %}
+    </div>
+    <div class="navbar-brand-text">
+      <span class="rt-site-name">{{ settings.site_name or 'Anas Aatar Wale' }}</span>
+      <span>Premium Attar &amp; Perfumes</span>
+    </div>
+  </a>
+
+  <ul class="navbar-nav">
+    <li><a href="{{ url_for('index') }}" class="{% if request.endpoint=='index' %}active{% endif %}">Home</a></li>
+    <li><a href="{{ url_for('products') }}" class="{% if request.endpoint=='products' %}active{% endif %}">Products</a></li>
+    <!-- <li><a href="{{ url_for('products') }}?category=1">Oud</a></li>
+    <li><a href="{{ url_for('products') }}?category=2">Floral</a></li> -->
+    {% if session.user_id %}
+    <li><a href="{{ url_for('profile') }}" class="{% if request.endpoint=='profile' %}active{% endif %}">My Account</a></li>
+    {% else %}
+    <li><a href="{{ url_for('login') }}">Login</a></li>
+    {% endif %}
+    {% if session.admin_id %}
+    <li><a href="{{ url_for('admin_dashboard') }}" style="color:var(--gold);font-weight:700">🔧 Admin</a></li>
+    {% endif %}
+  </ul>
+
+  <div class="navbar-actions">
+    {% if session.user_id %}
+    <!-- FIX #6: Notification bell -->
+    <div style="position:relative">
+      <button class="btn-icon" id="userNotifBell" onclick="toggleUserNotifPanel()" style="font-size:1.1rem">🔔</button>
+      <span id="userNotifBadge" style="display:none;position:absolute;top:-4px;right:-4px;background:#DC2626;color:white;font-size:0.6rem;font-weight:700;width:16px;height:16px;border-radius:50%;align-items:center;justify-content:center">0</span>
+    </div>
+    <a href="{{ url_for('wishlist') }}" class="btn-icon">🤍</a>
+    {% endif %}
+    <a href="{{ url_for('cart') }}" class="btn-cart">
+      🛍️ Cart
+      <span class="cart-badge" id="cartBadge" style="display:none">0</span>
+    </a>
+  </div>
+  <!-- FIX #6: User notification panel -->
+  {% if session.user_id %}
+  <div id="userNotifPanel" style="display:none;position:fixed;top:64px;right:80px;width:300px;background:white;border-radius:16px;box-shadow:0 8px 40px rgba(0,0,0,0.15);z-index:8000;max-height:380px;overflow-y:auto;border:1px solid #f0f0f0">
+    <div style="padding:14px 18px;border-bottom:1px solid #f0f0f0;display:flex;justify-content:space-between;align-items:center">
+      <span style="font-weight:700;color:#1F2937;font-size:0.9rem">🔔 Notifications</span>
+      <button onclick="markAllRead()" style="font-size:0.75rem;color:#5C3317;font-weight:600;border:none;background:none;cursor:pointer">Mark all read</button>
+    </div>
+    <div id="userNotifList" style="padding:8px 0">
+      <div style="text-align:center;padding:20px;color:#9CA3AF;font-size:0.85rem">Loading...</div>
+    </div>
+  </div>
+  {% endif %}
+</nav>
+
+<!-- Main Content -->
+<main style="padding-top:{% block noPadTop %}var(--navbar-h){% endblock %}">
+  {% block content %}{% endblock %}
+</main>
+
+<!-- Footer -->
+{% block footer %}
+<footer class="footer">
+  <div class="footer-grid">
+    <div>
+      <div class="d-flex gap-2 mb-3" style="align-items:center">
+        <div class="navbar-logo" style="width:40px;height:40px;font-size:1.2rem">🪷</div>
+        <div class="navbar-brand-text"><span class="rt-site-name">{{ settings.site_name or 'Anas Aatar Wale' }}</span><span>Premium Attar &amp; Perfumes</span></div>
+      </div>
+      <p style="font-size:0.88rem;max-width:280px;line-height:1.7;opacity:0.7">Pure, natural and long-lasting fragrances for every occasion.</p>
+    </div>
+    <div>
+      <h4>Quick Links</h4>
+      <ul>
+        <li><a href="{{ url_for('index') }}">Home</a></li>
+        <li><a href="{{ url_for('products') }}">All Products</a></li>
+        <li><a href="{{ url_for('products') }}?category=1">Oud Collection</a></li>
+        <li><a href="{{ url_for('products') }}?category=2">Floral Attars</a></li>
+      </ul>
+    </div>
+    <div>
+      <h4>My Account</h4>
+      <ul>
+        {% if session.user_id %}
+        <li><a href="{{ url_for('profile') }}">Profile</a></li>
+        <li><a href="{{ url_for('my_orders') }}">My Orders</a></li>
+        <li><a href="{{ url_for('wishlist') }}">Wishlist</a></li>
+        <li><a href="{{ url_for('logout') }}">Logout</a></li>
+        {% else %}
+        <li><a href="{{ url_for('login') }}">Login</a></li>
+        <li><a href="{{ url_for('register') }}">Register</a></li>
+        {% endif %}
+      </ul>
+    </div>
+    <div>
+      <h4>Contact</h4>
+      <ul>
+        <li><a href="#">📍 Sehore, MP, India</a></li>
+        <li><a href="#">📞 +91 9876543210</a></li>
+        <li><a href="#">📧 anas@aatarwale.com</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="footer-bottom"><p>© 2024 <span class="rt-site-name">Anas Aatar Wale</span>. Made with ❤️ in India</p></div>
+</footer>
+{% endblock %}
+
+<!-- Mobile Bottom Nav -->
+<nav class="bottom-nav">
+  <div class="bottom-nav-items">
+    <a href="{{ url_for('index') }}"    class="bottom-nav-item {% if request.endpoint=='index' %}active{% endif %}"><span class="bottom-nav-icon">🏠</span>Home</a>
+    <a href="{{ url_for('products') }}" class="bottom-nav-item {% if request.endpoint=='products' %}active{% endif %}"><span class="bottom-nav-icon">🔍</span>Search</a>
+    <a href="{{ url_for('products') }}" class="bottom-nav-item"><span class="bottom-nav-icon">🏷️</span>Categories</a>
+    <a href="{{ url_for('profile') if session.user_id else url_for('login') }}" class="bottom-nav-item {% if request.endpoint=='profile' %}active{% endif %}"><span class="bottom-nav-icon">👤</span>Account</a>
+    <a href="{{ url_for('cart') }}" class="bottom-nav-item {% if request.endpoint=='cart' %}active{% endif %}" style="position:relative">
+      <span class="bottom-nav-icon">🛍️</span>Cart
+      <span class="cart-badge" style="position:absolute;top:4px;right:10px;font-size:0.6rem">0</span>
+    </a>
+  </div>
+</nav>
+
+<!-- ════ ADMIN INLINE EDIT BAR (shown only when admin logged in) ════ -->
+{% if session.admin_id %}
+<div class="admin-edit-bar">
+  <span class="admin-edit-bar-label">🔧 Admin Mode</span>
+  <button class="admin-edit-btn gold" onclick="openHeroEditor()">✏️ Edit Hero</button>
+  <button class="admin-edit-btn" onclick="openCropper({aspectRatio:NaN,outputSize:800,onSave:d=>{document.getElementById('logoImgData').value=d;document.querySelectorAll('.rt-logo-img').forEach(e=>{e.src=d;e.style.display='block'});document.querySelectorAll('.rt-logo-emoji').forEach(e=>e.style.display='none')}})">🖼️ Change Logo</button>
+  <button class="admin-edit-btn" onclick="adminEditCategories()">🏷️ Edit Categories</button>
+  <a href="{{ url_for('admin_dashboard') }}" class="admin-edit-btn">📊 Dashboard</a>
+  <a href="{{ url_for('admin_logout') }}" class="admin-edit-btn" style="margin-left:auto;opacity:0.7">🚪 Logout</a>
+</div>
+<!-- hidden logo img data for save -->
+<input type="hidden" id="logoImgData">
+{% endif %}
+
+<!-- ════ HERO EDITOR MODAL ════ -->
+{% if session.admin_id %}
+<div class="hero-edit-overlay" id="heroEditorOverlay">
+  <div class="hero-edit-modal">
+    <div class="hero-edit-header">
+      <span style="font-weight:700;font-size:1rem;color:var(--primary-dark)">✏️ Edit Hero Section</span>
+      <button onclick="closeHeroEditor()" style="width:30px;height:30px;border-radius:8px;border:none;background:#f3f4f6;cursor:pointer">✕</button>
+    </div>
+    <div class="hero-edit-body">
+      <div class="form-group">
+        <label class="form-label">Site Name</label>
+        <input id="siteNameInput" class="form-control" value="{{ settings.site_name or 'Anas Aatar Wale' }}">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Hero Headline (HTML allowed for &lt;span&gt; color)</label>
+        <input id="heroTitleInput" class="form-control" value="{{ settings.hero_title|replace('<span>','<span>')|replace('</span>','</span>') }}">
+        <small style="color:var(--text-light);font-size:0.78rem">Tip: wrap a word in &lt;span&gt;word&lt;/span&gt; to make it gold</small>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Hero Subtitle</label>
+        <textarea id="heroSubtitleInput" class="form-control" rows="3">{{ settings.hero_subtitle }}</textarea>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Hero Image</label>
+        <div class="img-upload-box" onclick="openCropper({aspectRatio:16/9,outputSize:1200,onSave:d=>{document.getElementById('heroImgData').value=d;document.getElementById('heroImgPreview').src=d;document.getElementById('heroImgPreview').style.display='block'}})">
+          <img id="heroImgPreview" class="img-preview" src="{{ settings.hero_image or '' }}" style="{{ 'display:block' if settings.hero_image else 'display:none' }}">
+          <div style="color:var(--text-light);font-size:0.9rem">🖼️ Click to upload &amp; crop hero image</div>
+        </div>
+        <input type="hidden" id="heroImgData">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Logo Image</label>
+        <div class="img-upload-box" onclick="openCropper({aspectRatio:1,outputSize:200,onSave:d=>{document.getElementById('logoImgData2').value=d;document.getElementById('logoPreview2').src=d;document.getElementById('logoPreview2').style.display='block';document.querySelectorAll('.rt-logo-img').forEach(e=>{e.src=d;e.style.display='block'});document.querySelectorAll('.rt-logo-emoji').forEach(e=>e.style.display='none')}})">
+          <img id="logoPreview2" class="img-preview" src="{{ settings.logo_image or '' }}" style="{{ 'display:block;width:80px;height:80px;border-radius:50%' if settings.logo_image else 'display:none' }}">
+          <div style="color:var(--text-light);font-size:0.9rem">🪷 Click to upload &amp; crop logo (1:1 square)</div>
+        </div>
+        <input type="hidden" id="logoImgData2">
+      </div>
+    </div>
+      <!-- FIX #4 Admin: Editable service badges -->
+      <div class="form-group" style="margin-top:16px;border-top:1px solid #eee;padding-top:16px">
+        <label class="form-label" style="font-weight:700;color:var(--primary-dark)">Service Badges</label>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px">
+          <div>
+            <input id="fastDeliveryTitle" class="form-control" value="{{ settings.fast_delivery_title or 'Fast Delivery' }}" placeholder="Fast Delivery" style="margin-bottom:4px">
+            <input id="fastDeliveryText" class="form-control" value="{{ settings.fast_delivery_text or '3-5 business days' }}" placeholder="3-5 business days">
+          </div>
+          <div>
+            <input id="securePayTitle" class="form-control" value="{{ settings.secure_payment_title or 'Secure Payment' }}" placeholder="Secure Payment" style="margin-bottom:4px">
+            <input id="securePayText" class="form-control" value="{{ settings.secure_payment_text or '100% safe checkout' }}" placeholder="100% safe checkout">
+          </div>
+          <div>
+            <input id="easyReturnsTitle" class="form-control" value="{{ settings.easy_returns_title or 'Easy Returns' }}" placeholder="Easy Returns" style="margin-bottom:4px">
+            <input id="easyReturnsText" class="form-control" value="{{ settings.easy_returns_text or '7 day return policy' }}" placeholder="7 day return policy">
+          </div>
+          <div>
+            <input id="authenticTitle" class="form-control" value="{{ settings.authentic_title or 'Authentic' }}" placeholder="Authentic" style="margin-bottom:4px">
+            <input id="authenticText" class="form-control" value="{{ settings.authentic_text or '100% genuine product' }}" placeholder="100% genuine product">
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="hero-edit-footer">
+      <button onclick="closeHeroEditor()" style="padding:9px 20px;border-radius:10px;border:1.5px solid var(--border);background:white;cursor:pointer;font-weight:600">Cancel</button>
+      <button id="heroSaveBtn" onclick="saveHeroSettingsAll()" class="btn btn-dark btn-sm" style="border-radius:10px;padding:9px 24px">💾 Save Changes</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════ INLINE PRODUCT EDIT MODAL ════ -->
+<div class="inline-modal-overlay" id="inlineEditModal">
+  <div class="inline-modal">
+    <div class="inline-modal-header">
+      <span style="font-weight:700;color:var(--primary-dark)">✏️ Edit Product</span>
+      <button onclick="closeInlineEditModal()" style="width:28px;height:28px;border-radius:8px;border:none;background:#f3f4f6;cursor:pointer">✕</button>
+    </div>
+    <div class="inline-modal-body">
+      <input type="hidden" id="inlineEditId">
+      <div class="form-group">
+        <label class="form-label">Product Image</label>
+        <div class="img-upload-box" onclick="openCropper({aspectRatio:1,outputSize:600,onSave:d=>{document.getElementById('inlineEditImgData').value=d;const p=document.getElementById('inlineEditImgPreview');p.src=d;p.style.display='block'}})">
+          <img id="inlineEditImgPreview" class="img-preview">
+          <div style="color:var(--text-light);font-size:0.88rem">📷 Click to upload &amp; crop product image</div>
+        </div>
+        <input type="hidden" id="inlineEditImgData">
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Product Name *</label>
+          <input id="inlineEditName" class="form-control" placeholder="e.g. Oud Al Layl">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Category</label>
+          <select id="inlineEditCategory" class="form-control">
+            <!-- filled by JS -->
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Price (₹) *</label>
+          <input id="inlineEditPrice" type="number" class="form-control" placeholder="999">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Stock</label>
+          <input id="inlineEditStock" type="number" class="form-control" placeholder="50">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Volume</label>
+          <input id="inlineEditVolume" class="form-control" placeholder="12ml">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Rating</label>
+          <input id="inlineEditRating" type="number" step="0.1" min="1" max="5" class="form-control" placeholder="4.5">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Description</label>
+        <textarea id="inlineEditDesc" class="form-control" rows="3" placeholder="Product description..."></textarea>
+      </div>
+    </div>
+    <div class="inline-modal-footer">
+      <button onclick="closeInlineEditModal()" style="padding:9px 20px;border-radius:10px;border:1.5px solid var(--border);background:white;cursor:pointer;font-weight:600">Cancel</button>
+      <button onclick="submitInlineEdit()" class="btn btn-dark btn-sm btn-save-modal" style="border-radius:10px;padding:9px 24px">💾 Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════ INLINE ADD PRODUCT MODAL ════ -->
+<div class="inline-modal-overlay" id="inlineAddModal">
+  <div class="inline-modal">
+    <div class="inline-modal-header">
+      <span style="font-weight:700;color:var(--primary-dark)">➕ Add New Product</span>
+      <button onclick="closeInlineAddModal()" style="width:28px;height:28px;border-radius:8px;border:none;background:#f3f4f6;cursor:pointer">✕</button>
+    </div>
+    <div class="inline-modal-body">
+      <div class="form-group">
+        <label class="form-label">Product Image</label>
+        <div class="img-upload-box" onclick="openCropper({aspectRatio:1,outputSize:600,onSave:d=>{document.getElementById('inlineAddImgData').value=d;const p=document.getElementById('inlineAddImgPreview');p.src=d;p.style.display='block'}})">
+          <img id="inlineAddImgPreview" class="img-preview">
+          <div style="color:var(--text-light);font-size:0.88rem">📷 Click to upload &amp; crop product image</div>
+        </div>
+        <input type="hidden" id="inlineAddImgData">
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Product Name *</label>
+          <input id="inlineAddName" class="form-control" placeholder="e.g. Rose Taifi">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Category</label>
+          <select id="inlineAddCategory" class="form-control"></select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Price (₹) *</label>
+          <input id="inlineAddPrice" type="number" class="form-control" placeholder="999">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Stock</label>
+          <input id="inlineAddStock" type="number" class="form-control" placeholder="50">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Volume</label>
+          <input id="inlineAddVolume" class="form-control" placeholder="12ml">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Rating</label>
+          <input id="inlineAddRating" type="number" step="0.1" min="1" max="5" class="form-control" value="4.5">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Description</label>
+        <textarea id="inlineAddDesc" class="form-control" rows="3" placeholder="Describe this attar..."></textarea>
+      </div>
+    </div>
+    <div class="inline-modal-footer">
+      <button onclick="closeInlineAddModal()" style="padding:9px 20px;border-radius:10px;border:1.5px solid var(--border);background:white;cursor:pointer;font-weight:600">Cancel</button>
+      <button onclick="submitInlineAdd()" class="btn btn-primary btn-sm btn-save-modal" style="border-radius:10px;padding:9px 24px">➕ Add Product</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════ CATEGORY EDITOR MODAL ════ -->
+<div class="cat-editor-overlay" id="catEditorOverlay">
+  <div class="cat-editor-modal">
+    <div style="padding:16px 20px;border-bottom:1px solid #eee;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:white;z-index:1">
+      <span style="font-weight:700;color:var(--primary-dark)">🏷️ Edit Categories</span>
+      <button onclick="closeCatEditor()" style="width:28px;height:28px;border-radius:8px;border:none;background:#f3f4f6;cursor:pointer">✕</button>
+    </div>
+    <div id="catEditorList" style="padding:16px"></div>
+    <div style="padding:14px 16px;border-top:1px solid #eee;display:flex;gap:10px">
+      <button onclick="addCatRow()" style="flex:1;padding:10px;border-radius:10px;border:1.5px dashed var(--border);background:var(--cream);cursor:pointer;font-weight:600;color:var(--primary)">+ Add Category</button>
+      <button onclick="closeCatEditor()" style="padding:10px 20px;border-radius:10px;border:none;background:var(--primary);color:white;cursor:pointer;font-weight:600">Done</button>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<!-- Scripts -->
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+<script src="{{ url_for('static', filename='js/realtime.js') }}"></script>
+{% if session.admin_id %}
+<script src="{{ url_for('static', filename='js/cropper_util.js') }}"></script>
+<script src="{{ url_for('static', filename='js/admin_inline.js') }}"></script>
+<script>
+// Populate category dropdowns
+fetch('/api/realtime').then(r=>r.json()).then(data=>{
+  ['inlineEditCategory','inlineAddCategory'].forEach(id=>{
+    const sel = document.getElementById(id);
+    if(!sel) return;
+    sel.innerHTML = data.categories.map(c=>`<option value="${c.id}">${c.icon} ${c.name}</option>`).join('');
+  });
+  // Cat editor
+  const list = document.getElementById('catEditorList');
+  if(list) renderCatList(data.categories);
+});
+
+function renderCatList(cats) {
+  const list = document.getElementById('catEditorList');
+  list.innerHTML = cats.map(c=>`
+    <div style="display:flex;gap:8px;align-items:center;margin-bottom:10px">
+      <input value="${c.icon}" style="width:50px;border:1.5px solid #e5e7eb;border-radius:8px;padding:8px;text-align:center;font-size:1.2rem" id="catIcon${c.id}">
+      <input value="${c.name}" style="flex:1;border:1.5px solid #e5e7eb;border-radius:8px;padding:8px;font-family:Poppins,sans-serif" id="catName${c.id}">
+      <button onclick="saveCategory(${c.id}, document.getElementById('catName${c.id}').value, document.getElementById('catIcon${c.id}').value)"
+              style="padding:8px 14px;border-radius:8px;border:none;background:var(--primary);color:white;cursor:pointer;font-weight:600;font-size:0.82rem">Save</button>
+    </div>`).join('');
+}
+
+function addCatRow() {
+  const list = document.getElementById('catEditorList');
+  const div = document.createElement('div');
+  div.style.cssText = 'display:flex;gap:8px;align-items:center;margin-bottom:10px';
+  div.innerHTML = `
+    <input placeholder="🏷️" style="width:50px;border:1.5px solid #e5e7eb;border-radius:8px;padding:8px;text-align:center;font-size:1.2rem" id="newCatIcon">
+    <input placeholder="Category name..." style="flex:1;border:1.5px solid #e5e7eb;border-radius:8px;padding:8px;font-family:Poppins,sans-serif" id="newCatName">
+    <button onclick="saveCategory(null,document.getElementById('newCatName').value,document.getElementById('newCatIcon').value||'🏷️')"
+            style="padding:8px 14px;border-radius:8px;border:none;background:var(--gold);color:white;cursor:pointer;font-weight:600;font-size:0.82rem">Add</button>`;
+  list.appendChild(div);
+}
+
+function saveHeroSettingsAll() {
+  const logoData = document.getElementById('logoImgData2')?.value || document.getElementById('logoImgData')?.value || null;
+  const data = {
+    hero_title:      document.getElementById('heroTitleInput').value,
+    hero_subtitle:   document.getElementById('heroSubtitleInput').value,
+    site_name:       document.getElementById('siteNameInput').value,
+    hero_image_data: document.getElementById('heroImgData').value || null,
+    logo_image_data: logoData,
+    fast_delivery_title:  document.getElementById('fastDeliveryTitle')?.value || 'Fast Delivery',
+    fast_delivery_text:   document.getElementById('fastDeliveryText')?.value || '3-5 business days',
+    secure_payment_title: document.getElementById('securePayTitle')?.value || 'Secure Payment',
+    secure_payment_text:  document.getElementById('securePayText')?.value || '100% safe checkout',
+    easy_returns_title:   document.getElementById('easyReturnsTitle')?.value || 'Easy Returns',
+    easy_returns_text:    document.getElementById('easyReturnsText')?.value || '7 day return policy',
+    authentic_title:      document.getElementById('authenticTitle')?.value || 'Authentic',
+    authentic_text:       document.getElementById('authenticText')?.value || '100% genuine product',
+  };
+  fetch('/admin/settings/save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)})
+    .then(r=>r.json()).then(d=>{
+      if(d.success){showAdminToast('✅ Settings saved!');closeHeroEditor();}
+    });
+}
+</script>
+{% endif %}
+{% block extra_js %}{% endblock %}
+
+<script>
+// FIX #6: User notifications
+function toggleUserNotifPanel() {
+  const panel = document.getElementById('userNotifPanel');
+  if (!panel) return;
+  const isOpen = panel.style.display !== 'none';
+  panel.style.display = isOpen ? 'none' : 'block';
+  if (!isOpen) loadUserNotifs();
+  if (!isOpen) {
+    setTimeout(() => {
+      document.addEventListener('click', function h(e) {
+        if (!panel.contains(e.target) && e.target.id !== 'userNotifBell') {
+          panel.style.display = 'none';
+          document.removeEventListener('click', h);
+        }
+      });
+    }, 50);
+  }
+}
+
+function loadUserNotifs() {
+  fetch('/api/notifications')
+    .then(r => r.json())
+    .then(data => {
+      const list = document.getElementById('userNotifList');
+      const badge = document.getElementById('userNotifBadge');
+      if (!list) return;
+      if (data.unread > 0) {
+        badge.textContent = data.unread > 9 ? '9+' : data.unread;
+        badge.style.display = 'flex';
+      } else {
+        badge.style.display = 'none';
+      }
+      if (!data.notifications || data.notifications.length === 0) {
+        list.innerHTML = '<div style="text-align:center;padding:20px;color:#9CA3AF;font-size:0.85rem">No notifications yet</div>';
+        return;
+      }
+      list.innerHTML = data.notifications.map(n => `
+        <div style="padding:10px 18px;border-bottom:1px solid #f9f9f9;${n.is_read ? '' : 'background:#fffbf0;'}">
+          <div style="font-size:0.85rem;font-weight:600;color:#1F2937">${n.title}</div>
+          <div style="font-size:0.78rem;color:#6B7280;margin-top:2px;line-height:1.4">${n.message}</div>
+          <div style="font-size:0.72rem;color:#9CA3AF;margin-top:3px">${n.created_at}</div>
+        </div>`).join('');
+    }).catch(()=>{});
+}
+
+function markAllRead() {
+  fetch('/api/notifications/mark_read', {method:'POST'})
+    .then(() => {
+      document.getElementById('userNotifBadge').style.display = 'none';
+      loadUserNotifs();
+    }).catch(()=>{});
+}
+
+// Poll notifications every 30s
+setInterval(() => {
+  if (!document.getElementById('userNotifBadge')) return;
+  fetch('/api/notifications')
+    .then(r => r.json())
+    .then(data => {
+      const badge = document.getElementById('userNotifBadge');
+      if (!badge) return;
+      if (data.unread > 0) {
+        badge.textContent = data.unread > 9 ? '9+' : data.unread;
+        badge.style.display = 'flex';
+      } else {
+        badge.style.display = 'none';
+      }
+    }).catch(()=>{});
+}, 30000);
+</script>
+</body>
+</html>

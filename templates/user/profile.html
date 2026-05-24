@@ -1,0 +1,113 @@
+{% extends "user/base.html" %}
+{% block title %}My Profile - Anas Aatar Wale{% endblock %}
+{% block page_id %}profile{% endblock %}
+
+{% block content %}
+<div class="section">
+  <div class="container" style="max-width:700px">
+    <div class="profile-header">
+      <div class="profile-avatar" style="background:rgba(255,255,255,0.2);color:white;font-size:2rem">
+        {{ user.first_name[0] }}{{ user.last_name[0] if user.last_name else '' }}
+      </div>
+      <div>
+        <h2 style="font-family:'Playfair Display',serif;font-size:1.5rem;margin-bottom:4px">
+          {{ user.first_name }} {{ user.last_name or '' }}
+        </h2>
+        <p style="opacity:0.75;font-size:0.9rem">{{ user.email }}</p>
+        <p style="opacity:0.6;font-size:0.85rem;margin-top:4px">📞 {{ user.phone or 'Add phone number' }}</p>
+        <p style="opacity:0.6;font-size:0.85rem;margin-top:2px">📦 {{ order_count }} order{{ 's' if order_count != 1 else '' }}</p>
+      </div>
+    </div>
+
+    <a href="{{ url_for('my_orders') }}" class="profile-menu-item delay-1">
+      <div class="menu-icon">📦</div><span>My Orders</span><span class="chevron">›</span>
+    </a>
+    <a href="{{ url_for('wishlist') }}" class="profile-menu-item delay-2">
+      <div class="menu-icon">❤️</div><span>Wishlist</span><span class="chevron">›</span>
+    </a>
+    <a href="{{ url_for('cart') }}" class="profile-menu-item delay-3">
+      <div class="menu-icon">🛍️</div><span>My Cart</span><span class="chevron">›</span>
+    </a>
+
+    <!-- FIX #8: Address management -->
+    <div class="profile-menu-item delay-4" style="cursor:pointer" onclick="toggleAddressForm()">
+      <div class="menu-icon">📍</div><span>My Address</span>
+      <span class="chevron" id="addressChevron">›</span>
+    </div>
+    <div id="addressForm" style="display:none;padding:20px;background:var(--cream-dark);border-radius:0 0 16px 16px;margin-top:-8px;margin-bottom:8px">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+        <div>
+          <label style="font-size:0.82rem;font-weight:600;color:var(--text-mid);display:block;margin-bottom:4px">First Name</label>
+          <input id="addrFirstName" value="{{ user.first_name }}" class="form-control" style="border:1.5px solid var(--border);border-radius:10px;padding:10px 14px;width:100%;font-family:inherit;font-size:0.9rem;outline:none">
+        </div>
+        <div>
+          <label style="font-size:0.82rem;font-weight:600;color:var(--text-mid);display:block;margin-bottom:4px">Last Name</label>
+          <input id="addrLastName" value="{{ user.last_name or '' }}" class="form-control" style="border:1.5px solid var(--border);border-radius:10px;padding:10px 14px;width:100%;font-family:inherit;font-size:0.9rem;outline:none">
+        </div>
+      </div>
+      <div style="margin-bottom:12px">
+        <label style="font-size:0.82rem;font-weight:600;color:var(--text-mid);display:block;margin-bottom:4px">Phone</label>
+        <input id="addrPhone" value="{{ user.phone or '' }}" class="form-control" style="border:1.5px solid var(--border);border-radius:10px;padding:10px 14px;width:100%;font-family:inherit;font-size:0.9rem;outline:none">
+      </div>
+      <div style="margin-bottom:12px">
+        <label style="font-size:0.82rem;font-weight:600;color:var(--text-mid);display:block;margin-bottom:4px">Full Address</label>
+        <textarea id="addrAddress" rows="2" style="border:1.5px solid var(--border);border-radius:10px;padding:10px 14px;width:100%;font-family:inherit;font-size:0.9rem;outline:none;resize:vertical">{{ user.address or '' }}</textarea>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:16px">
+        <div>
+          <label style="font-size:0.82rem;font-weight:600;color:var(--text-mid);display:block;margin-bottom:4px">City</label>
+          <input id="addrCity" value="{{ user.city or '' }}" class="form-control" style="border:1.5px solid var(--border);border-radius:10px;padding:10px 14px;width:100%;font-family:inherit;font-size:0.9rem;outline:none">
+        </div>
+        <div>
+          <label style="font-size:0.82rem;font-weight:600;color:var(--text-mid);display:block;margin-bottom:4px">State</label>
+          <input id="addrState" value="{{ user.state or '' }}" class="form-control" style="border:1.5px solid var(--border);border-radius:10px;padding:10px 14px;width:100%;font-family:inherit;font-size:0.9rem;outline:none">
+        </div>
+        <div>
+          <label style="font-size:0.82rem;font-weight:600;color:var(--text-mid);display:block;margin-bottom:4px">ZIP Code</label>
+          <input id="addrZip" value="{{ user.zip_code or '' }}" class="form-control" style="border:1.5px solid var(--border);border-radius:10px;padding:10px 14px;width:100%;font-family:inherit;font-size:0.9rem;outline:none">
+        </div>
+      </div>
+      <button onclick="saveAddress()" class="btn btn-dark" style="border-radius:12px;width:100%">💾 Save Address</button>
+    </div>
+
+    <a href="{{ url_for('logout') }}" class="profile-menu-item" style="animation-delay:0.6s">
+      <div class="menu-icon" style="background:#fee">🚪</div>
+      <span style="color:var(--error)">Logout</span><span class="chevron">›</span>
+    </a>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function toggleAddressForm() {
+  const form = document.getElementById('addressForm');
+  const chevron = document.getElementById('addressChevron');
+  if (form.style.display === 'none') {
+    form.style.display = 'block';
+    chevron.textContent = '∨';
+  } else {
+    form.style.display = 'none';
+    chevron.textContent = '›';
+  }
+}
+
+function saveAddress() {
+  const fd = new FormData();
+  fd.append('first_name', document.getElementById('addrFirstName').value);
+  fd.append('last_name',  document.getElementById('addrLastName').value);
+  fd.append('phone',      document.getElementById('addrPhone').value);
+  fd.append('address',    document.getElementById('addrAddress').value);
+  fd.append('city',       document.getElementById('addrCity').value);
+  fd.append('state',      document.getElementById('addrState').value);
+  fd.append('zip_code',   document.getElementById('addrZip').value);
+
+  fetch('/profile', {method: 'POST', body: fd})
+    .then(r => r.json())
+    .then(d => {
+      if (d.success) showToast('✅ ' + d.message, 'success');
+      else showToast('Error saving!', 'error');
+    }).catch(() => showToast('Network error', 'error'));
+}
+</script>
+{% endblock %}

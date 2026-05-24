@@ -1,0 +1,84 @@
+{% extends "admin/base.html" %}
+{% block title %}Orders - Admin{% endblock %}
+{% block page_title %}Orders Management{% endblock %}
+
+{% block content %}
+<div class="card">
+  <div class="card-header">
+    <span class="card-title">📦 All Orders ({{ orders|length }})</span>
+    <div style="display:flex;gap:10px">
+      <select class="filter-select" onchange="filterOrders(this.value)">
+        <option value="">All Status</option>
+        <option value="pending">Pending</option>
+        <option value="confirmed">Confirmed</option>
+        <option value="shipped">Shipped</option>
+        <option value="delivered">Delivered</option>
+        <option value="cancelled">Cancelled</option>
+      </select>
+    </div>
+  </div>
+  <div class="table-responsive">
+    <table class="table" id="ordersTable">
+      <thead><tr>
+        <th>Order ID</th><th>Customer</th><th>Date</th><th>Amount</th><th>Payment</th><th>Rzp ID</th><th>Status</th><th>Actions</th>
+      </tr></thead>
+      <tbody>
+        {% for order in orders %}
+        <tr data-status="{{ order.status }}">
+          <td><strong>#{{ order.id }}</strong></td>
+          <td>
+            <div>{{ order.first_name }} {{ order.last_name }}</div>
+            <div style="font-size:0.8rem;color:#6B7280">{{ order.email }}</div>
+          </td>
+          <td style="font-size:0.85rem">{{ order.created_at.strftime('%d/%m/%Y') }}</td>
+          <td><strong>₹{{ "%.0f"|format(order.total) }}</strong></td>
+          <td>
+            <span style="text-transform:uppercase;font-size:0.8rem;font-weight:600">{{ order.payment_method }}</span>
+            {% if order.razorpay_payment_id %}
+            <div style="font-size:0.7rem;color:#6B7280;margin-top:2px" title="Razorpay Payment ID">{{ order.razorpay_payment_id[:16] }}...</div>
+            {% endif %}
+          </td>
+          <td style="font-size:0.75rem;color:#6B7280">
+            {% if order.razorpay_payment_id %}
+            <span title="{{ order.razorpay_payment_id }}">✅ {{ order.razorpay_payment_id[:10] }}...</span>
+            {% else %}
+            <span style="color:#D1D5DB">—</span>
+            {% endif %}
+          </td>
+          <td>
+            <select class="filter-select" style="font-size:0.8rem;padding:5px 10px"
+                    onchange="updateOrderStatus({{ order.id }}, this.value)">
+              {% for status in ['pending','confirmed','processing','shipped','delivered','cancelled'] %}
+              <option value="{{ status }}" {% if order.status == status %}selected{% endif %}>
+                {{ status|title }}
+              </option>
+              {% endfor %}
+            </select>
+          </td>
+          <td>
+            <span class="badge badge-{{ order.status }}">{{ order.status|title }}</span>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function filterOrders(status) {
+  document.querySelectorAll('#ordersTable tbody tr').forEach(row => {
+    row.style.display = !status || row.dataset.status === status ? '' : 'none';
+  });
+}
+function updateOrderStatus(orderId, status) {
+  const fd = new FormData();
+  fd.append('status', status);
+  fetch('/admin/orders/status/' + orderId, { method: 'POST', body: fd })
+    .then(r => r.json())
+    .then(() => showAdminToast('✅ Order status updated!'));
+}
+</script>
+{% endblock %}

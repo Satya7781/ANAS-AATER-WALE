@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Admin Panel - Anas Aatar Wale{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+  {% block extra_css %}{% endblock %}
+  <style>
+  /* FIX #5 Admin: notification panel */
+  .notif-panel {
+    position:fixed;top:64px;right:16px;width:320px;background:white;
+    border-radius:16px;box-shadow:0 8px 40px rgba(0,0,0,0.15);z-index:9000;
+    display:none;max-height:420px;overflow-y:auto;border:1px solid #f0f0f0;
+  }
+  .notif-panel.open { display:block; animation:slideDown 0.25s ease; }
+  @keyframes slideDown { from{opacity:0;transform:translateY(-10px)} to{opacity:1;transform:translateY(0)} }
+  .notif-header { padding:14px 18px;border-bottom:1px solid #f0f0f0;font-weight:700;color:#1F2937;display:flex;justify-content:space-between;align-items:center; }
+  .notif-item { padding:12px 18px;border-bottom:1px solid #f9f9f9;cursor:pointer; }
+  .notif-item:hover { background:#fafafa; }
+  .notif-item-title { font-size:0.85rem;font-weight:600;color:#1F2937; }
+  .notif-item-sub { font-size:0.78rem;color:#6B7280;margin-top:2px; }
+  .status-badge-sm { padding:2px 8px;border-radius:20px;font-size:0.7rem;font-weight:600; }
+  </style>
+</head>
+<body>
+
+<!-- Sidebar -->
+<aside class="sidebar" id="adminSidebar">
+  <a href="{{ url_for('admin_dashboard') }}" class="sidebar-brand">
+    <div class="sidebar-logo">🪷</div>
+    <div class="sidebar-brand-text">
+      Anas Aatar Wale
+      <span>Admin Panel</span>
+    </div>
+  </a>
+
+  <nav class="sidebar-nav">
+    <div class="sidebar-section-label">Main</div>
+    <a href="{{ url_for('admin_dashboard') }}" class="sidebar-item {% if request.endpoint == 'admin_dashboard' %}active{% endif %}">
+      <span class="sidebar-item-icon">📊</span> Dashboard
+    </a>
+    <a href="{{ url_for('admin_orders') }}" class="sidebar-item {% if request.endpoint == 'admin_orders' %}active{% endif %}">
+      <span class="sidebar-item-icon">📦</span> Orders
+    </a>
+
+    <div class="sidebar-section-label" style="margin-top:12px">Catalog</div>
+    <a href="{{ url_for('admin_products') }}" class="sidebar-item {% if request.endpoint == 'admin_products' %}active{% endif %}">
+      <span class="sidebar-item-icon">🪷</span> Products
+    </a>
+    <a href="{{ url_for('admin_categories') }}" class="sidebar-item {% if request.endpoint == 'admin_categories' %}active{% endif %}">
+      <span class="sidebar-item-icon">🏷️</span> Categories
+    </a>
+
+    <div class="sidebar-section-label" style="margin-top:12px">Users</div>
+    <a href="{{ url_for('admin_users') }}" class="sidebar-item {% if request.endpoint == 'admin_users' %}active{% endif %}">
+      <span class="sidebar-item-icon">👥</span> Customers
+    </a>
+
+    <div class="sidebar-section-label" style="margin-top:12px">Store</div>
+    <a href="{{ url_for('index') }}" class="sidebar-item" target="_blank">
+      <span class="sidebar-item-icon">🌐</span> View Store
+    </a>
+  </nav>
+
+  <div class="sidebar-footer">
+    <div style="display:flex;align-items:center;gap:10px">
+      <div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#5C3317,#C4962A);display:flex;align-items:center;justify-content:center;color:white;font-weight:700">A</div>
+      <div>
+        <div style="color:white;font-size:0.85rem;font-weight:600">{{ session.admin_name }}</div>
+        <div style="color:rgba(255,255,255,0.4);font-size:0.75rem">Administrator</div>
+      </div>
+      <a href="{{ url_for('admin_logout') }}" style="margin-left:auto;color:rgba(255,255,255,0.4);font-size:0.9rem" title="Logout">🚪</a>
+    </div>
+  </div>
+</aside>
+
+<!-- Main Content -->
+<main class="admin-main">
+  <!-- Topbar -->
+  <header class="topbar">
+    <button class="topbar-btn" id="sidebarToggle" style="display:none">☰</button>
+    <div class="topbar-title">{% block page_title %}Dashboard{% endblock %}</div>
+    <div class="topbar-actions">
+      <!-- FIX #5 Admin: Real notification bell -->
+      <button class="topbar-btn" id="notifBell" onclick="toggleNotifPanel()" style="position:relative">
+        🔔
+        <span class="topbar-badge" id="notifBadge" style="display:none">0</span>
+      </button>
+      <a href="{{ url_for('index') }}" class="topbar-btn" target="_blank" title="View Store">🌐</a>
+      <div class="admin-avatar">A</div>
+    </div>
+  </header>
+
+  <!-- FIX #5 Admin: Notification panel -->
+  <div class="notif-panel" id="notifPanel">
+    <div class="notif-header">
+      <span>🔔 Recent Orders</span>
+      <a href="{{ url_for('admin_orders') }}" style="font-size:0.78rem;color:#5C3317;font-weight:600;text-decoration:none">View All →</a>
+    </div>
+    <div id="notifList" style="padding:8px 0">
+      <div style="text-align:center;padding:24px;color:#9CA3AF;font-size:0.85rem">Loading...</div>
+    </div>
+  </div>
+
+  <!-- Page Content -->
+  <div class="page-content">
+    {% block content %}{% endblock %}
+  </div>
+</main>
+
+<!-- FIX #4 Admin: Hero editor has service badge editing -->
+<script>
+document.getElementById('sidebarToggle').addEventListener('click', () => {
+  document.getElementById('adminSidebar').classList.toggle('open');
+});
+
+function openModal(id) {
+  document.getElementById(id).classList.add('active');
+}
+function closeModal(id) {
+  document.getElementById(id).classList.remove('active');
+}
+function showAdminToast(message, type = 'success') {
+  let ct = document.getElementById('adminToast');
+  if (!ct) { ct = document.createElement('div'); ct.id = 'adminToast'; ct.style.cssText = 'position:fixed;bottom:20px;right:20px;z-index:9999'; document.body.appendChild(ct); }
+  const t = document.createElement('div');
+  t.style.cssText = `background:${type==='success'?'#059669':type==='error'?'#DC2626':'#1F2937'};color:white;padding:12px 20px;border-radius:10px;margin-top:8px;font-size:0.9rem;animation:slideInRight 0.3s ease;box-shadow:0 4px 16px rgba(0,0,0,0.2)`;
+  t.textContent = message;
+  ct.appendChild(t);
+  setTimeout(() => t.remove(), 3000);
+}
+
+// FIX #5 Admin: Load real notifications
+function toggleNotifPanel() {
+  const panel = document.getElementById('notifPanel');
+  panel.classList.toggle('open');
+  if (panel.classList.contains('open')) loadAdminNotifs();
+  // Close on outside click
+  setTimeout(() => {
+    document.addEventListener('click', function handler(e) {
+      if (!panel.contains(e.target) && e.target.id !== 'notifBell') {
+        panel.classList.remove('open');
+        document.removeEventListener('click', handler);
+      }
+    });
+  }, 50);
+}
+
+function loadAdminNotifs() {
+  fetch('/api/admin/notifications')
+    .then(r => r.json())
+    .then(data => {
+      const list = document.getElementById('notifList');
+      const badge = document.getElementById('notifBadge');
+      if (data.pending_count > 0) {
+        badge.textContent = data.pending_count;
+        badge.style.display = 'flex';
+      } else {
+        badge.style.display = 'none';
+      }
+      if (!data.recent_orders || data.recent_orders.length === 0) {
+        list.innerHTML = '<div style="text-align:center;padding:24px;color:#9CA3AF;font-size:0.85rem">No recent orders</div>';
+        return;
+      }
+      const statusColors = {
+        pending:'#D97706',confirmed:'#2563EB',processing:'#7C3AED',
+        shipped:'#0891B2',delivered:'#059669',cancelled:'#DC2626'
+      };
+      list.innerHTML = data.recent_orders.map(o => `
+        <div class="notif-item" onclick="window.location.href='/admin/orders'">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div class="notif-item-title">Order #${o.id} — ${o.first_name} ${o.last_name}</div>
+            <span class="status-badge-sm" style="background:${statusColors[o.status]||'#6B7280'}20;color:${statusColors[o.status]||'#6B7280'}">${o.status}</span>
+          </div>
+          <div class="notif-item-sub">₹${parseFloat(o.total).toFixed(0)} · ${o.created_at}</div>
+        </div>`).join('');
+    }).catch(() => {});
+}
+
+// Poll badge count every 30s
+setInterval(() => {
+  fetch('/api/admin/notifications')
+    .then(r => r.json())
+    .then(data => {
+      const badge = document.getElementById('notifBadge');
+      if (data.pending_count > 0) {
+        badge.textContent = data.pending_count;
+        badge.style.display = 'flex';
+      } else {
+        badge.style.display = 'none';
+      }
+    }).catch(()=>{});
+}, 30000);
+loadAdminNotifs();
+</script>
+{% block extra_js %}{% endblock %}
+</body>
+</html>
