@@ -5,3 +5,4 @@ pymysql==1.1.0
 Werkzeug==3.0.1
 razorpay==1.4.2
 gunicorn==22.0.0
+setuptools==80.9.0
